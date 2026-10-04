@@ -20,15 +20,17 @@ npm run lint         # ESLint（依存の向きのルールを含む）
 npm run format       # Prettier で整形（*.md は対象外）
 npm run format:check # 整形の確認のみ
 npm run build        # 型チェック（tsc -b）とビルド
+npm run master-data  # md（hq-to-shintora-route.md・team-tokaido-mobility-map.md）からマスターデータを作り直す
 ```
 
-GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
+GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドと、マスターデータが md と一致するかを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
 
 ## コードの構成
 
 - `src/` はコンテキスト（`stepRecord` / `teamMission` / `personalMission` / `missionCandidate` / `member`）ごとに分け、その中を `domain/` / `application/` / `infrastructure/` に分ける。コンテキスト間の型は `publishedLanguage/`、共通の部品は `shared/`、画面は `ui/`。詳細は ARCHITECTURE.md「3. レイヤー構造」。
 - 依存の向きは `eslint.config.js` で強制している。コンテキスト同士を直接 import しない、`domain/` は React や他レイヤーに依存しない、`ui/` は `application/` だけを呼ぶ。
 - コードの名前は DOMAINS.md のユビキタス言語の英語名（例: 進行歩数 = ProgressSteps）に合わせる。
+- 通過点（`src/personalMission/masterData/tokaidoRoute.ts`）とミッション候補（`src/missionCandidate/masterData/missionCandidates.ts`）は、md から `scripts/generate-master-data.mjs` で作る生成物。直接編集せず、md を直して `npm run master-data` を実行する。
 - tsconfig の `erasableSyntaxOnly` が有効なため、コンストラクタ引数でのプロパティ宣言（`constructor(private readonly x: X)`）や enum は使えない。
 
 ## アプリ概要

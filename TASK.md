@@ -34,8 +34,8 @@
 - [x] ミッションの作成（優勝チームのメンバーが候補から選ぶ、誰も作成しなければ23:59に一番上の候補で自動確定）（`teamMission/domain/nextMission.ts`、`missionCandidate/domain/CandidateList.ts`）
 
 #### フェーズ2: データ
-- [ ] hq-to-shintora-route.md の43地点（累計歩数・一口メモ）をデータにする
-- [ ] team-tokaido-mobility-map.md の9つの目的地（名称・代表漢字・読み・目標歩数・中間地点・配点）をデータにする
+- [x] hq-to-shintora-route.md の43地点（累計歩数・一口メモ）をデータにする（`personalMission/masterData/tokaidoRoute.ts`）
+- [x] team-tokaido-mobility-map.md の9つの目的地（名称・代表漢字・読み・目標歩数・中間地点・配点）をデータにする（`missionCandidate/masterData/missionCandidates.ts`）
 
 #### フェーズ3: 保存と時間
 - [ ] localStorage に保存する Repository を作る（あとで Supabase 用に差し替えられる形にする）

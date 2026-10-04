@@ -40,3 +40,11 @@ jobs:
 
       - name: ビルド（型チェックを含む）
         run: npm run build
+
+      - name: マスターデータが md から作ったものと一致するか
+        run: |
+          npm run master-data
+          git diff --exit-code -- src/personalMission/masterData src/missionCandidate/masterData || {
+            echo "::error::マスターデータが md と食い違っています。npm run master-data を実行してコミットしてください"
+            exit 1
+          }

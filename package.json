@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "master-data": "node scripts/generate-master-data.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",
