@@ -8,7 +8,8 @@ export interface Settings {
 }
 
 const KEY = 'genchigenpo:uiSettings'
-export const DEFAULT_SETTINGS: Settings = { theme: 'os', showArabic: false }
+/** 初期値は昼（端末が夜の設定でも、昼の色合いで始める）。 */
+export const DEFAULT_SETTINGS: Settings = { theme: 'light', showArabic: false }
 
 export function loadSettings(): Settings {
   try {

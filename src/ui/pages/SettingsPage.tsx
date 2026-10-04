@@ -1,9 +1,9 @@
 import type { Settings, ThemeSetting } from '../settings.ts'
 
 const THEMES: { value: ThemeSetting; label: string }[] = [
-  { value: 'os', label: '端末の設定に合わせる' },
   { value: 'light', label: '昼（和紙）' },
   { value: 'night', label: '夜（藍染の夜）' },
+  { value: 'os', label: '端末の設定に合わせる' },
 ]
 
 /** 設定: 昼・夜の切り替え、算用数字の併記。 */

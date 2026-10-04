@@ -28,7 +28,7 @@ AI による推奨設計案（検討ボード）もここに集める。
 
 **要点**（詳細と正は デザインシステムの README）
 - 浮世絵調（北斎『冨嶽三十六景』）。藍の濃淡（`ai-light` `ai-mid` `ai-strong` `ai-deep`）と和紙の地（`washi-*`）が主役で、差し色は朱（`shu`）1つだけ。影は使わず、濃淡と墨線（`line-sumi`）で奥行きを出す。
-- 昼（`light`）と夜（`night`）の2テーマ。OS 設定に連動し、手動でも切り替える。
+- 昼（`light`）と夜（`night`）の2テーマ。初期値は昼【採用】。設定で夜に切り替えたり、端末（OS）の設定に合わせたりできる。
 - 色・字・間は `tokens.json` の名前で指定し、値を直書きしない。余白は `ma-1`〜`ma-5`、角丸は `radius-0`〜`radius-2`（0〜2px）。
 - 字は明朝（Shippori Mincho B1 / Shippori Mincho / Zen Old Mincho）、12px 以下は Zen Kaku Gothic New。いずれも Google Fonts。
 - 歩数は大字（壱・弍・参…）で表示し、算用数字は `aria-label` と任意の併記で補う。

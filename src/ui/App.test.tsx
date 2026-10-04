@@ -98,6 +98,11 @@ test('開発用画面で日付を進めると、ミッションが始まり隊�
   expect(screen.getByText(/（自分の隊）/)).toBeInTheDocument()
 })
 
+test('初めて開いたときは昼の色合い', () => {
+  setup()
+  expect(document.documentElement.dataset.theme).toBe('light')
+})
+
 test('設定で昼・夜を切り替えられる', async () => {
   const { user } = setup()
   await user.click(tab('設定'))

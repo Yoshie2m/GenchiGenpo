@@ -75,12 +75,15 @@ body {
   grid-column: 1 / -1;
   margin-top: var(--ma-3);
 }
+/* 国の景色は切り取らずに全体を見せる（左上の題簽の国名が欠けないように、縮小して収める）。 */
 .journey__scene {
   display: block;
   width: 100%;
-  max-height: 200px;
-  object-fit: cover;
-  object-position: center 40%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  margin: 0 auto;
 }
 .ho-routeline__track {
   overflow-x: auto;
