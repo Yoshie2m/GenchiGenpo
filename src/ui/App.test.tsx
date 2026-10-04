@@ -4,7 +4,7 @@ import { createApp } from '../composition.ts'
 import { fixedClock } from '../shared/Clock.ts'
 import { sequentialIdGenerator } from '../shared/IdGenerator.ts'
 import { parseLocalDate } from '../shared/LocalDate.ts'
-import App from './App.tsx'
+import App, { CONCEPT } from './App.tsx'
 
 /** 日本時間 2026-10-04 12:00、ダミーメンバー入り。 */
 function setup() {
@@ -49,6 +49,8 @@ test('下部の5タブで画面を切り替える', async () => {
   ]) {
     await user.click(tab(name))
     expect(screen.getByRole('heading', { level: 2, name: heading })).toBeInTheDocument()
+    // コンセプト文はどのタブでも上部に出る
+    expect(screen.getByText(CONCEPT)).toBeInTheDocument()
     expect(tab(name)).toHaveAttribute('aria-current', 'page')
   }
 })

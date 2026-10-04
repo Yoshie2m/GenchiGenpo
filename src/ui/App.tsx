@@ -21,6 +21,10 @@ const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
 ]
 type TabId = 'today' | 'record' | 'journey' | 'team' | 'settings'
 
+/** コンセプト文（デザインシステム「アプリ名とコンセプト」。言い換えずにそのまま使う）。どのタブでも上部に出す。 */
+export const CONCEPT =
+  '「画面を見るな、現場へ走れ。」足で稼ぐビジネスパーソンのための、現地現物ライフログ。'
+
 const MEMBER_KEY = 'genchigenpo:devCurrentMember'
 
 function initialMember(app: AppServices): MemberId {
@@ -92,6 +96,7 @@ export default function App({ app }: { app: AppServices }) {
             <h1 className="app__title">現地現歩</h1>
             <p className="fs-caption">{me?.displayName}さん</p>
           </div>
+          <p className="app__concept">{CONCEPT}</p>
         </header>
         <DevPanel app={app} memberId={memberId} onMemberChange={changeMember} refresh={refresh} />
         <main className="app__main">
