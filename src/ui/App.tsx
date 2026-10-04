@@ -89,7 +89,7 @@ export default function App({ app }: { app: AppServices }) {
         <header className="app__header">
           <img src={logoUrl(night)} alt="歩" className="app__logo" />
           <div>
-            <h1 className="app__title">現地現物</h1>
+            <h1 className="app__title">現地現歩</h1>
             <p className="fs-caption">{me?.displayName}さん</p>
           </div>
         </header>
