@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { addDays, localDateOf, type LocalDate } from '../../shared/LocalDate.ts'
 import { Steps } from '../design-system/components.tsx'
 import { formatDate } from '../format.ts'
+import { CaptureImport } from './CaptureImport.tsx'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
 
@@ -24,6 +25,7 @@ export function RecordPage({ app, memberId, refresh }: PageProps) {
       <p className="ho-field__label">
         過去の日の歩数も、後から記録できます。減らせるのは誤入力の修正だけです。チームミッションには、歩数受付締切（最終日の翌日13:00）までの分が数えられます。
       </p>
+      <CaptureImport app={app} memberId={memberId} refresh={refresh} />
       <ul className="record-list">
         {dates.map((date) => (
           <li key={date} className="record-row">

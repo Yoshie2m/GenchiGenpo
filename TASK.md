@@ -61,8 +61,8 @@
 - [x] デザインシステムのコンポーネント（TabBar・Daiji・Tanzaku・Seal・Button・Dialog・Controls・BarChart と、追加した TeamMark・WaveBand・RouteLine・CheckpointLog）の見た目を画面に当てる
 
 #### フェーズ5: 仕上げ（任意）
-- [ ] MobimonGO の画面キャプチャ取り込みを移植する（ブラウザ内の文字認識なので PoC でも動く）
-- [ ] 1つのミッションを最初から最後まで通す画面テスト（Playwright）
+- [x] MobimonGO の画面キャプチャ取り込みを移植する（ブラウザ内の文字認識なので PoC でも動く）（`stepRecord/acl/screenCapture/`・`ScreenCaptureImportService.ts`、記録の画面）
+- [x] 1つのミッションを最初から最後まで通す画面テスト（Playwright）（`e2e/mission.spec.ts`）
 
 ### デザイン（デザインシステム「歩（ほ）」との食い違い）
 

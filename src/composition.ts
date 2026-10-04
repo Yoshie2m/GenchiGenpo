@@ -15,6 +15,10 @@ import { EventBus } from './shared/EventBus.ts'
 import { randomIdGenerator, type IdGenerator } from './shared/IdGenerator.ts'
 import { localDateOf } from './shared/LocalDate.ts'
 import type { KeyValueStorage } from './shared/VersionedStorage.ts'
+import {
+  ScreenCaptureImportService,
+  type CalendarRecognizer,
+} from './stepRecord/application/ScreenCaptureImportService.ts'
 import { StepRecordService } from './stepRecord/application/StepRecordService.ts'
 import { LocalStorageDailyStepsRepository } from './stepRecord/infrastructure/LocalStorageDailyStepsRepository.ts'
 import { TeamMissionService } from './teamMission/application/TeamMissionService.ts'
@@ -30,6 +34,15 @@ export interface AppOptions {
   readonly storage?: KeyValueStorage & { readonly length: number; key(i: number): string | null }
   readonly baseClock?: Clock
   readonly ids?: IdGenerator
+  /** 画面キャプチャの文字認識（テストでは差し替える）。 */
+  readonly recognizeCalendar?: CalendarRecognizer
+}
+
+/** 文字認識は重いので、画面キャプチャを取り込むときに初めて読み込む。 */
+const recognizeWithTesseract: CalendarRecognizer = async (image) => {
+  const { recognizeStepCalendar } =
+    await import('./stepRecord/acl/screenCapture/recognizeStepCalendar.ts')
+  return recognizeStepCalendar(image)
 }
 
 /**
@@ -45,6 +58,11 @@ export function createApp(options: AppOptions = {}) {
   const members = new MemberService(new LocalStorageMemberRepository(storage), clock, ids)
   const steps = new StepRecordService(new LocalStorageDailyStepsRepository(storage), clock, (e) =>
     bus.publish(e),
+  )
+  const screenCapture = new ScreenCaptureImportService(
+    steps,
+    clock,
+    options.recognizeCalendar ?? recognizeWithTesseract,
   )
   const personal = new PersonalMissionService(
     new LocalStoragePersonalMissionRepository(storage, TOKAIDO_ROUTE),
@@ -127,7 +145,7 @@ export function createApp(options: AppOptions = {}) {
     },
   }
 
-  return { clock, members, steps, personal, candidates, team, registerMember, dev }
+  return { clock, members, steps, screenCapture, personal, candidates, team, registerMember, dev }
 }
 
 export type App = ReturnType<typeof createApp>

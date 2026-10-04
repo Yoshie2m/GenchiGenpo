@@ -130,3 +130,24 @@ body {
   gap: var(--ma-2);
   margin: var(--ma-2) 0;
 }
+
+.capture__pick {
+  display: inline-flex;
+  align-items: center;
+}
+.capture-row {
+  display: grid;
+  grid-template-columns: 7em 6em 1fr;
+  gap: var(--ma-2);
+  align-items: center;
+  padding: var(--ma-1) 0;
+  border-bottom: var(--line-hair) solid var(--ai-light);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

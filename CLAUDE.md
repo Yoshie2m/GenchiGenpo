@@ -22,9 +22,12 @@ npm run format:check # 整形の確認のみ
 npm run build        # 型チェック（tsc -b）とビルド
 npm run master-data  # md（hq-to-shintora-route.md・team-tokaido-mobility-map.md）からマスターデータを作り直す
 npm run design:tokens # デザインシステムの tokens.json から tokens.css を作り直す
+npm run test:ocr     # 実際の文字認識で画面キャプチャのサンプルを読むテスト（初回は学習データの取得に通信が必要、*.ocr.test.ts）
+npm run e2e          # 画面の自動テスト（Playwright。本番用のビルドを Chromium で動かす。初回は npx playwright install chromium）
+npx playwright test e2e/mission.spec.ts   # E2E を1ファイルだけ実行する
 ```
 
-GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドと、マスターデータが md と一致するか、tokens.css が tokens.json と一致するかを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
+GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドと、マスターデータが md と一致するか、tokens.css が tokens.json と一致するかを確かめ、通ったら E2E（Playwright）を動かす。文字認識のテスト（test:ocr）は CI では動かさない。push する前に、手元で同じコマンドが通ることを確かめること。
 
 ## コードの構成
 
@@ -34,6 +37,8 @@ GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のた�
 - 時刻で起きること（開始時のチーム振り分け、途中参加、次のミッションの自動確定）は `TeamMissionService.tick()` でまとめて進める。画面の表示や操作のたびに呼ばれる。
 - PoC は初めて開いたときにダミーメンバー10人を入れる（`src/dev/demoData.ts`）。画面上部の「開発用」で、メンバーの切り替え・日付を進める・ほかのメンバーの歩数を入れる・初期化ができる。
 - コードの名前は DOMAINS.md のユビキタス言語の英語名（例: 進行歩数 = ProgressSteps）に合わせる。
+- E2E（`e2e/`）は時計を日本時間 2026-10-04 12:00 に止めて動かす（`e2e/fixtures.ts`）。日付を進めるのは開発用画面のボタンで行う。
+- 画面キャプチャの取り込みは `src/stepRecord/acl/screenCapture/`（MobimonGO から移植した腐敗防止層）。文字認識（Tesseract.js）は取り込むときに初めて読み込む。テストでは `createApp({ recognizeCalendar })` で差し替える。
 - 通過点（`src/personalMission/masterData/tokaidoRoute.ts`）とミッション候補（`src/missionCandidate/masterData/missionCandidates.ts`）は、md から `scripts/generate-master-data.mjs` で作る生成物。直接編集せず、md を直して `npm run master-data` を実行する。
 - tsconfig の `erasableSyntaxOnly` が有効なため、コンストラクタ引数でのプロパティ宣言（`constructor(private readonly x: X)`）や enum は使えない。
 

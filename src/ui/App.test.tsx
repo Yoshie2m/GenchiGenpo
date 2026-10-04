@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createApp } from '../composition.ts'
 import { fixedClock } from '../shared/Clock.ts'
 import { sequentialIdGenerator } from '../shared/IdGenerator.ts'
+import { parseLocalDate } from '../shared/LocalDate.ts'
 import App from './App.tsx'
 
 /** 日本時間 2026-10-04 12:00、ダミーメンバー入り。 */
@@ -13,6 +14,21 @@ function setup() {
     storage: localStorage,
     baseClock: fixedClock(new Date('2026-10-04T03:00:00Z')),
     ids: sequentialIdGenerator('id'),
+    // 画面キャプチャの文字認識は差し替える（10月のカレンダーを読み取った扱い）
+    recognizeCalendar: async () => ({
+      ok: true,
+      calendar: {
+        year: 2026,
+        month: 10,
+        days: [
+          { day: 1, steps: 9000 },
+          { day: 2, steps: 130000 },
+          { day: 3, steps: 1 },
+          { day: 5, steps: null },
+        ],
+        warnings: [],
+      },
+    }),
   })
   app.dev.seedDemoIfEmpty()
   render(<App app={app} />)
@@ -110,4 +126,24 @@ test('設定で昼・夜を切り替えられる', async () => {
   expect(document.documentElement.dataset.theme).toBe('night')
   await user.click(screen.getByLabelText('昼（和紙）'))
   expect(document.documentElement.dataset.theme).toBe('light')
+})
+
+test('画面キャプチャを読み取り、確認画面で確かめてから取り込む', async () => {
+  const { app, user } = setup()
+  const me = app.members.members()[0].memberId
+  const before = new Map(app.steps.recordsOf(me).map((r) => [r.date, r.steps]))
+  await user.click(tab('記録'))
+  await user.upload(
+    screen.getByLabelText('スクリーンショットの画像'),
+    new File(['x'], 'capture.png', { type: 'image/png' }),
+  )
+  const form = await screen.findByRole('form', { name: '読み取った歩数の確認' })
+  // 10/2 は 30,000 歩を超えているので止める。10/3 は今の記録より少ない
+  expect(within(form).getByText(/30,000歩で止めます/)).toBeInTheDocument()
+  expect(within(form).getAllByText(/今の記録より少ないので取り込まない/).length).toBeGreaterThan(0)
+  await user.click(within(form).getByRole('button', { name: /取り込む/ }))
+  expect(screen.getByText(/日分を取り込みました/)).toBeInTheDocument()
+  const after = new Map(app.steps.recordsOf(me).map((r) => [r.date, r.steps]))
+  expect(after.get(parseLocalDate('2026-10-02'))).toBe(30000)
+  expect(after.get(parseLocalDate('2026-10-03'))).toBe(before.get(parseLocalDate('2026-10-03')))
 })

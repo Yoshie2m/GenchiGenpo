@@ -1,5 +1,5 @@
 # push と Pull Request のたびに、整形・lint・テスト・ビルドを確かめる。
-# main への push では、チェックが通ったあと Cloudflare Pages にデプロイする。
+# チェックが通ったら E2E を動かし、main への push では両方が通ったあと Cloudflare Pages にデプロイする。
 name: CI
 
 on:
@@ -58,9 +58,48 @@ jobs:
             exit 1
           }
 
+  e2e:
+    name: 画面の自動テスト（E2E）
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: 依存パッケージのインストール
+        run: npm ci
+
+      # Chromium は Playwright の版が変わらない限り再利用する
+      - name: Chromium のキャッシュ
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Chromium のインストール
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: E2E テスト（本番用のビルドを相手にする）
+        run: npm run e2e
+
+      - name: 失敗したときの報告と記録を残す
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   deploy:
     name: Cloudflare Pages にデプロイ
-    needs: check
+    needs: [check, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

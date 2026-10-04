@@ -18,8 +18,8 @@ const otherContext = (context) =>
 
 const domainPurity = [
   {
-    group: ['**/application/**', '**/infrastructure/**', '**/ui/**'],
-    message: 'domain/ は application / infrastructure / ui に依存しない。',
+    group: ['**/application/**', '**/infrastructure/**', '**/acl/**', '**/ui/**'],
+    message: 'domain/ は application / infrastructure / acl / ui に依存しない。',
   },
   {
     group: ['react', 'react-dom', 'react/**', 'react-dom/**'],
@@ -61,7 +61,7 @@ export default defineConfig([
     files: ['src/ui/**/*.{ts,tsx}'],
     rules: restrict([
       {
-        group: ['**/domain/**', '**/infrastructure/**'],
+        group: ['**/domain/**', '**/infrastructure/**', '**/acl/**'],
         message: 'ui/ は各コンテキストの application/ だけを呼ぶ。',
       },
     ]),
