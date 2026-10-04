@@ -33,7 +33,7 @@ README のスキーマ（`users`・`teams`・`steps`、`steps` のIDは `ユー�
 | `TASK.md` | 直近のタスク、対話で出た宿題、概念整理のタスク（例: コンテキスト境界の定義） | 結論そのもの（完了したら他の2ファイルに反映する） |
 | `DOMAINS.md` | ユビキタス言語辞書、境界づけられたコンテキスト、Entity / Value Object とビジネスルール、ドメインイベント | **技術的な話（DB、フレームワーク、API、画面など）は一切書かない** |
 | `ARCHITECTURE.md` | レイヤー構造、AI の推奨設計案の比較、Repository、DB 設計、Application Service | ビジネスルールの新規定義（先に DOMAINS.md で決める） |
-| `hq-to-shintora-route.md` | 個人ミッションの固定ルート（東海道五十三次）の概要と通過点（個人チェックポイント）の一覧・累計歩数・一口メモ | ルールそのもの（DOMAINS.md の「個人ミッション」に書く） |
+| `hq-to-shintora-route.md` | 個人ミッションの固定ルート（東海道五十三次）の概要と通過点の一覧・累計歩数・一口メモ | ルールそのもの（DOMAINS.md の「個人ミッション」に書く） |
 | `team-tokaido-mobility-map.md` | チームミッションの目的地（ミッション候補）の一覧と、到達日数・中間地点の目安 | ルールそのもの（DOMAINS.md に書く） |
 
 運用ルール:
