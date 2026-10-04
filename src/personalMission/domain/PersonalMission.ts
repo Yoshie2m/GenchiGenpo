@@ -25,8 +25,7 @@ export interface CheckpointArrival {
 export class PersonalMission {
   readonly memberId: MemberId
   readonly route: Route
-  /** 旅立ちの日（2026年10月1日、または10月1日からの歩数がないメンバーは登録日）。 */
-  readonly startDate: LocalDate
+  private startDateValue: LocalDate
   private readonly stepsByDate: Map<LocalDate, number>
   private readonly arrivals: CheckpointArrival[]
 
@@ -39,7 +38,7 @@ export class PersonalMission {
   ) {
     this.memberId = memberId
     this.route = route
-    this.startDate = startDate
+    this.startDateValue = startDate
     this.stepsByDate = stepsByDate
     this.arrivals = arrivals
   }
@@ -64,10 +63,18 @@ export class PersonalMission {
     )
   }
 
+  /**
+   * 旅立ちの日。始めは登録日で、登録日より前（2026年10月1日以降）の歩数が記録されたら、
+   * その日までさかのぼる（10月1日からの歩数の情報があれば、さかのぼって更新できる。DOMAINS.md）。
+   */
+  get startDate(): LocalDate {
+    return this.startDateValue
+  }
+
   toSnapshot(): PersonalMissionSnapshot {
     return {
       memberId: this.memberId,
-      startDate: this.startDate,
+      startDate: this.startDateValue,
       stepsByDate: [...this.stepsByDate.entries()],
       arrivals: [...this.arrivals],
     }
@@ -75,12 +82,17 @@ export class PersonalMission {
 
   /**
    * 歩数が記録されたときに呼ぶ。その日の歩数を置き換え、着いた通過点を記録する（一度に複数着くこともある）。
-   * 着いた時刻は、歩いた日ではなく反映日時。旅立ちの日より前の歩数は数えない。
+   * 着いた時刻は、歩いた日ではなく反映日時。旅立ちの日より前の歩数が記録されたら、旅立ちの日をさかのぼる
+   * （歩数記録が 2026年10月1日より前の歩数を受け付けないので、それより前にはさかのぼらない）。
    * 誤入力の修正で累計歩数が減っても、一度着いた記録は消さない。
    * 戻り値は、今回新しく着いた通過点。
    */
   recordSteps(event: StepsRecorded): Checkpoint[] {
-    if (event.memberId !== this.memberId || event.date < this.startDate) return []
+    if (event.memberId !== this.memberId) return []
+    if (event.date < this.startDateValue) {
+      this.startDateValue = event.date
+      this.arrivals[0] = { checkpointIndex: 0, arrivedAt: atJst(event.date) }
+    }
     this.stepsByDate.set(event.date, event.steps)
     const reached: Checkpoint[] = []
     const total = this.cumulativeSteps

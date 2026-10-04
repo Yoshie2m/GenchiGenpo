@@ -1,5 +1,6 @@
 import { memberId } from '../../publishedLanguage/memberId.ts'
 import { DomainError } from '../../shared/DomainError.ts'
+import { parseLocalDate } from '../../shared/LocalDate.ts'
 import { a1, a2, b1, b2, jst, startSmallMission, steps } from './testHelpers.ts'
 
 describe('TeamMission の状態', () => {
@@ -108,6 +109,17 @@ describe('中間地点と中間通過ポイント', () => {
     m.recordSteps(steps(a1, '2026-10-05', 6000, '2026-10-05 20:00'))
     expect(m.waypointStandings(1)).toHaveLength(1)
     expect(m.standings(jst('2026-10-05 21:00'))[0].progressSteps).toBe(6000)
+  })
+})
+
+describe('今日の上位2名', () => {
+  test('その日に隊の中で歩数が上位2名のメンバー', () => {
+    const m = startSmallMission()
+    m.addMember(memberId('a3'), 1)
+    m.recordSteps(steps(a1, '2026-10-05', 5000, '2026-10-05 19:00'))
+    m.recordSteps(steps(a2, '2026-10-05', 9000, '2026-10-05 19:00'))
+    m.recordSteps(steps(memberId('a3'), '2026-10-05', 7000, '2026-10-05 19:00'))
+    expect(m.topTwoMembersOn(1, parseLocalDate('2026-10-05'))).toEqual(['a2', 'a3'])
   })
 })
 

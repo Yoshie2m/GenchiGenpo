@@ -29,6 +29,9 @@ GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のた�
 
 - `src/` はコンテキスト（`stepRecord` / `teamMission` / `personalMission` / `missionCandidate` / `member`）ごとに分け、その中を `domain/` / `application/` / `infrastructure/` に分ける。コンテキスト間の型は `publishedLanguage/`、共通の部品は `shared/`、画面は `ui/`。詳細は ARCHITECTURE.md「3. レイヤー構造」。
 - 依存の向きは `eslint.config.js` で強制している。コンテキスト同士を直接 import しない、`domain/` は React や他レイヤーに依存しない、`ui/` は `application/` だけを呼ぶ。
+- `src/composition.ts` がアプリの組み立て（依存の注入）を行う。各コンテキストのサービスを作り、`shared/EventBus.ts` で「歩数が記録された」を個人ミッションとチームミッションに配送する。コンテキスト間の問い合わせ（メンバーの一覧、平均歩数、ミッション候補）は `publishedLanguage/queries.ts` のインターフェースで渡す。
+- 時刻で起きること（開始時のチーム振り分け、途中参加、次のミッションの自動確定）は `TeamMissionService.tick()` でまとめて進める。画面の表示や操作のたびに呼ばれる。
+- PoC は初めて開いたときにダミーメンバー10人を入れる（`src/dev/demoData.ts`）。画面上部の「開発用」で、メンバーの切り替え・日付を進める・ほかのメンバーの歩数を入れる・初期化ができる。
 - コードの名前は DOMAINS.md のユビキタス言語の英語名（例: 進行歩数 = ProgressSteps）に合わせる。
 - 通過点（`src/personalMission/masterData/tokaidoRoute.ts`）とミッション候補（`src/missionCandidate/masterData/missionCandidates.ts`）は、md から `scripts/generate-master-data.mjs` で作る生成物。直接編集せず、md を直して `npm run master-data` を実行する。
 - tsconfig の `erasableSyntaxOnly` が有効なため、コンストラクタ引数でのプロパティ宣言（`constructor(private readonly x: X)`）や enum は使えない。

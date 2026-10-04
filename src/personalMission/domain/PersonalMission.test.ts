@@ -74,10 +74,15 @@ describe('PersonalMission（個人ミッション）', () => {
     expect(mission.currentCheckpoint.name).toBe('池鯉鮒宿')
   })
 
-  test('旅立ちの日より前の歩数は数えない', () => {
+  test('登録日より前の歩数が記録されたら、旅立ちの日をさかのぼって数える', () => {
     const mission = PersonalMission.begin(taro, route, parseLocalDate('2026-10-10'))
-    mission.recordSteps(steps('2026-10-09', 9000, '2026-10-10T03:00:00Z'))
-    expect(mission.cumulativeSteps).toBe(0)
+    mission.recordSteps(steps('2026-10-01', 9000, '2026-10-10T03:00:00Z'))
+    expect(mission.cumulativeSteps).toBe(9000)
+    expect(mission.startDate).toBe('2026-10-01')
+    expect(mission.checkpointArrivals[0]).toEqual({
+      checkpointIndex: 0,
+      arrivedAt: new Date('2026-09-30T15:00:00Z'),
+    })
   })
 
   test('ゴールに着くと旅を終える', () => {

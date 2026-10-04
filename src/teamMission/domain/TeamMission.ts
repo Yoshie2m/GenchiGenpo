@@ -235,6 +235,22 @@ export class TeamMission {
     return progressSteps(this.stepsOfDay(team), datesFrom(this.startDate, this.lastDay))
   }
 
+  /**
+   * その日に、隊の中で歩数が上位2名に入っているメンバー（「今日の上位に入っています」の表示に使う）。
+   * 歩数が同じで3人以上並んだときは、先に並んだ順で2名。
+   */
+  topTwoMembersOn(team: TeamNumber, date: LocalDate): MemberId[] {
+    const state = this.stateOf(team)
+    return [...state.members]
+      .flatMap((m) => {
+        const s = state.steps.get(`${m}|${date}`)
+        return s === undefined ? [] : [{ m, s }]
+      })
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 2)
+      .map((x) => x.m)
+  }
+
   /** 中間地点ごとの着順と中間通過ポイント（着いた中間地点だけ）。 */
   waypointStandings(team: TeamNumber): WaypointStanding[] {
     const state = this.stateOf(team)

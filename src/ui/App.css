@@ -1,0 +1,142 @@
+/* フェーズ4の最小限の見た目。フェーズ4.5でデザインシステム「歩（ほ）」に置き換える。 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  line-height: 1.7;
+}
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px 96px;
+}
+.app__tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #fff;
+  border-top: 1px solid #888;
+}
+.ho-tab {
+  flex: 1;
+  min-height: 56px;
+  background: none;
+  border: 0;
+  font-size: 16px;
+}
+.ho-tab[aria-current='page'] {
+  font-weight: bold;
+  text-decoration: underline;
+}
+.ho-daiji {
+  font-size: 40px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+.stack > * + * {
+  margin-top: 8px;
+}
+.block {
+  display: block;
+}
+.memo {
+  white-space: pre-line;
+}
+.record-list,
+.candidate-list,
+.ho-cplog,
+.ho-routeline__track {
+  list-style: none;
+  padding: 0;
+}
+.record-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #ddd;
+}
+.record-row > form {
+  grid-column: 1 / -1;
+}
+.ho-routeline__track {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+.ho-routeline__stop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.ho-routeline__stop.is-passed,
+.ho-routeline__stop[aria-current='location'] {
+  opacity: 1;
+}
+.kind {
+  font-size: 11px;
+}
+.ho-cplog__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #ddd;
+}
+.ho-tanzaku {
+  border: 1px solid #888;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.ho-tanzaku--mine {
+  border-width: 2px;
+}
+.ho-tanzaku__head {
+  display: flex;
+  justify-content: space-between;
+}
+.ho-tanzaku__value {
+  font-size: 24px;
+  font-weight: bold;
+}
+.ho-tanzaku__sub,
+.ho-field__label {
+  font-size: 12px;
+}
+.ho-field__input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+}
+.ho-btn {
+  min-height: 44px;
+  padding: 0 16px;
+}
+.dev-panel {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px dashed #888;
+  font-size: 14px;
+}
+.dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+progress {
+  width: 100%;
+}
