@@ -2,28 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status
+## プロジェクトの状況
 
-This repository is in the **requirements/planning phase**. The only content is `README.md` (in Japanese). There is no source code, package manifest, build system, linter, or test suite yet, so there are no build/lint/test commands. Update this file once a framework is scaffolded.
+本リポジトリは**要件定義・技術選定の段階**にある。中身は `README.md` のみで、ソースコード・パッケージ定義・ビルド設定・Linter・テストはまだ存在しないため、ビルド/Lint/テストのコマンドはない。フレームワークを導入したら本ファイルを更新すること。
 
-## What the app is
+## アプリ概要
 
-GenchiGenpo (現地現物) is a Japanese-themed, "on-site first" team walking app. Members' daily step counts are treated as "patrols" (巡回) toward destinations such as post towns (宿場町), overseas factories, and test courses, and teams compete on step totals.
+GenchiGenpo（現地現物）は、和風・現場主義のチーム対抗ウォーキングアプリ。メンバーの日々の歩数を「現地現物へのパトロール（巡回）」に見立て、宿場町・海外工場・テストコースなどの目的地を目指しながら、チームで歩数を競う。
 
-## Decided / candidate technical direction (from README)
+## 技術方針（README より）
 
-- **Frontend (candidate):** Next.js as a web app / PWA. iOS browsers cannot read step data directly, so step data must come from an external API (e.g. Google Fit, Fitbit) rather than the device. The target OS/device mix (iPhone vs Android, smartwatch support) is still undecided — check before choosing an ingestion approach.
-- **Backend:** Supabase (PostgreSQL), chosen for relational modeling of users / teams / step history and because the free plan never auto-upgrades to paid and has built-in API rate limiting.
+- **フロントエンド（候補）:** Next.js（Webアプリ / PWA化）。iOS のブラウザからは歩数データを直接取得できないため、Google Fit などの外部クラウドAPI、または Fitbit 等のスマートウォッチAPIとの連携が必要。対象OS・端末（iPhone / Android の比率、スマートウォッチ連携の要否）は未確定のため、歩数取得方式を決める前に確認すること。
+- **バックエンド:** Supabase（PostgreSQL）を採用。「ユーザー」「チーム」「歩数履歴」をリレーショナルに設計できること、無料プランのままなら自動で有料に移行しないこと、標準でAPIのレートリミットがあることが選定理由。
 
-## Hard constraints
+## 絶対条件
 
-- **Must run entirely within free tiers.** Avoid designs that could incur charges from unexpected traffic spikes (パケ死).
-- **Authentication is required in front of the backend** so bots/scripts cannot read or write data. Do not expose unauthenticated data access paths.
+- **無料枠内での運用が必須。** 予期せぬ大量アクセスによる高額課金（パケ死）が起こりうる設計は避ける。
+- **バックエンドの手前で認証を必須とする。** 不正なBotやスクリプトによるデータの読み書きを遮断するため、未認証でデータにアクセスできる経路を作らないこと。
 
-## Data model
+## データモデル
 
-The README's schema (`users`, `teams`, `steps` keyed by `uid_date`) is written in Firestore-collection terms and is **reference only** — the formal model is to be designed separately using DDD. Do not treat it as the authoritative schema.
+README のスキーマ（`users`・`teams`・`steps`、`steps` のIDは `ユーザーID_日付`）は Firestore のコレクション前提で書かれた**参考資料**にすぎない。正式なモデルは DDD で別途設計するため、確定したスキーマとして扱わないこと。
 
-## Language
+## 言語
 
-Project documentation is written in Japanese; keep new docs consistent with that unless asked otherwise.
+プロジェクトのドキュメントは日本語で書かれている。特に指示がない限り、新しいドキュメントも日本語で統一する。
