@@ -92,6 +92,31 @@
 - [ ] iOS ショートカット連携の送信方法を決める（メンバーごとの送信用トークンの発行、送る時刻、送る日の範囲）（関連: ARCHITECTURE.md 4.2）
 - [ ] 手入力・画面キャプチャの水増し対策を決める（1日の上限30,000歩、番付で個人の歩数を名前つきで見せる、は確定。ほかに要るか）
 
+### Supabase連携（本番DB化）
+目的: PoC（localStorage）から、ARCHITECTURE.md 2章で【採用】済みの Supabase（PostgreSQL）につなぎ替える。先に設計判断が要る論点を固め（ARCHITECTURE.md「5. 実装固有の設計」に反映）、固まったものから実装する。
+
+#### 設計判断（対話で決める）
+- [ ] コンテキスト単位の「まとめて読み込み・まとめて保存」の設計を見直す（Repository 非同期化の案3のステップ2）。全件ロード・全件保存はDBでは無料枠（パケ死対策）と相性が悪いため、メンバー別・日別などの単位に分ける（関連: ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース）
+- [ ] 歩数の「日次合計の上書き（今より小さい値は受け付けない）」ルールをDB側でどう保証するか決める（アプリ側のみで守るか、DB制約・トリガーを使うか）。`onStepsRecorded()` の競合対策（楽観的ロック）とあわせて検討する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
+- [ ] 招待制の運用を決める（誰が・いつメンバーのメールアドレスを登録するか。Supabase の `inviteUserByEmail` を使うか、サインアップ用リンクを配るか）（ARCHITECTURE.md 4.4）
+
+#### 実装（設計判断が固まってから着手）
+- [ ] ARCHITECTURE.md「データ永続化（DB）設計」のテーブル定義（`members`・`daily_steps`・`personal_missions` 系・`candidate_order`・`team_mission_state`）とRLSポリシーを、`supabase/migrations/` に最初のmigrationとして作成する（ARCHITECTURE.md「マイグレーション管理」案A）
+- [ ] `members.id` ＝ Supabase Auth の `auth.users.id` とする前提で、招待・初回ログイン時にメンバーの行を作る仕組みを決めて実装する（関連: 招待制の運用を決めるタスク）
+- [ ] `TeamMissionRepository` の保存に版番号（`version`）を持たせ、競合時は保存を失敗させて呼び出し側が読み直して再試行する仕組み（楽観的ロック）を実装する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
+- [ ] Repository インターフェースの非同期化ステップ1：5つの `domain/*Repository.ts`（`MemberRepository` / `CandidateListRepository` / `PersonalMissionRepository` / `DailyStepsRepository` / `TeamMissionRepository`）の `load()`/`save()` を `Promise` を返す形に変える（読み書きの単位は変えない）。あわせて `LocalStorage*Repository.ts`・各 `application/*Service.ts`・呼び出し元のUIを `await` 対応にする（ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース 案3のステップ1）
+- [ ] Supabaseプロジェクトを作成し、APIキー・接続情報の管理方法を決める（.env、CIのsecrets、本番/開発環境の分離）
+- [ ] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加する
+- [ ] `composition.ts` で localStorage 実装と Supabase 実装を切り替えられるようにする
+- [ ] 開発用画面の「メンバーの切り替え（ログインなし）」を、本番の認証フローに置き換える
+- [ ] 非同期化にともなうUIの対応（読み込み中・エラー表示）を各画面に加える
+- [ ] `tick()` の実行方式を実装する（決めた方式に応じて、Edge Function／cron、またはクライアント起動+排他制御）
+- [ ] テストの方針を決めて実装する（ユニットテストでのSupabaseのフェイク、結合テストでのローカルSupabase CLIの利用など）
+- [ ] CI（`.github/workflows/ci.yml`）に、`supabase db reset` で migrations が問題なく適用できるかを確認するジョブを追加する（ARCHITECTURE.md「マイグレーション管理」）
+- [ ] iOSショートカット連携・画面キャプチャ取り込みの送信先をSupabase経由に合わせる（関連: 上の「iOSショートカット連携の送信方法を決める」「Androidのメンバーが...」タスク、ARCHITECTURE.md 4.2・4.3）
+- [ ] Supabaseプロジェクトの自動停止（7日間アクセスがないと停止する）を防ぐ仕組みを用意する（例: GitHub Actionsで1日1回、軽いリクエストを送るスケジュールジョブ）（ARCHITECTURE.md「無料枠の見積り」）
+- [ ] 本番稼働後、Supabaseダッシュボードで帯域（egress）の使用量を定期的に確認する運用を決める。無料枠（10GB/月）の3〜5割に近づいたら、Repository非同期化ステップ2（`team_mission_state` の粒度見直し）に着手する（ARCHITECTURE.md「無料枠の見積り」）
+
 ## 完了
 
 - [x] 1人のメンバーが複数チームに所属できるかを決める → 異なるミッションであれば複数チームに同時所属できる（のちに「同時に参加できるミッションは1つだけ」に変更）
@@ -205,3 +230,11 @@
 - [x] 誤入力の修正・後日記録の期限の扱い → 歩数記録では判定せず、締切を過ぎた変更はチームミッション側で数えない。個人ミッションには締切後の修正も反映される（この扱いでよいと確認）
 - [x] 「その日に歩数のあるメンバー」 → その日の歩数を記録したメンバー（0歩の記録も含む）。0歩を記録した人は補充せず0歩で平均する（DOMAINS.md に反映）
 - [x] 日別上位2名平均歩数の 0.5 歩の端数 → 切り捨てずにそのまま合計する（DOMAINS.md に反映）
+- [x] 認証方式を決める → 案B（マジックリンク）＋ 招待制（ARCHITECTURE.md 4.4 に反映）
+- [x] Repository インターフェースの非同期化の進め方を決める → 案3（2段階。まずPromise化、その後コンテキストごとに粒度を見直す）（ARCHITECTURE.md「5. 実装固有の設計」に反映）
+- [x] tick() の実行方式を決める → 案C（クライアント実行＋楽観的ロック）（ARCHITECTURE.md「5. 実装固有の設計」Application Service に反映）
+- [x] RLSの方針を決める → 案B（本人の記録は所有者チェックをRLSで強制、読み取りは認証済みなら全員可。チームミッションの書き込みは案Aと同じ扱い）（ARCHITECTURE.md「データ永続化（DB）設計」に反映）
+- [x] スキーマ設計をおこなう → 案B（表形式のもの＝`members`・`daily_steps`・`personal_missions`系・`candidate_order`は正規化、チームミッションは`team_mission_state`としてJSONB＋版番号）（ARCHITECTURE.md「データ永続化（DB）設計」に反映）
+- [x] マイグレーションの管理方法を決める → 案A（Supabase CLI の migrations をリポジトリ管理。既存の「生成元をコードで管理し、CIで検証する」流儀に揃える）（ARCHITECTURE.md「マイグレーション管理」に反映）
+- [x] 無料枠の範囲を見積る → 想定規模（メンバー10〜20人・数か月）では当面問題なし。`team_mission_state` の全件読み書きが帯域（egress）を使う主な要因で、継続期間が長くなるほど効いてくる。自動停止（7日間アクセスがないと停止）は規模に関わらない別のリスクとして対策が必要（ARCHITECTURE.md「無料枠の見積り」に反映）
+- [x] フロントエンドをNext.jsへ移行するタイミングを決める → 移行しない。Viteのまま本番化する（当初の動機だったiOSの歩数取得制約は解決済みで、Next.jsの強み（SSR・API Routes）を使う理由が今の設計にないため）（ARCHITECTURE.md 2章・README.md に反映）
