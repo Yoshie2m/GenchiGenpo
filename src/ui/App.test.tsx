@@ -8,6 +8,7 @@ import App from './App.tsx'
 /** 日本時間 2026-10-04 12:00、ダミーメンバー入り。 */
 function setup() {
   localStorage.clear()
+  window.history.replaceState(null, '', '/')
   const app = createApp({
     storage: localStorage,
     baseClock: fixedClock(new Date('2026-10-04T03:00:00Z')),

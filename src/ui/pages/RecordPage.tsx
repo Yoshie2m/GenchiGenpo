@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { addDays, localDateOf, type LocalDate } from '../../shared/LocalDate.ts'
-import { formatDate, formatSteps } from '../format.ts'
+import { Steps } from '../design-system/components.tsx'
+import { formatDate } from '../format.ts'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
 
@@ -16,8 +17,10 @@ export function RecordPage({ app, memberId, refresh }: PageProps) {
   const [editing, setEditing] = useState<LocalDate | null>(null)
 
   return (
-    <section aria-labelledby="record-title">
-      <h2 id="record-title">記録</h2>
+    <section aria-labelledby="record-title" className="page">
+      <h2 id="record-title" className="fs-title">
+        記録
+      </h2>
       <p className="ho-field__label">
         過去の日の歩数も、後から記録できます。減らせるのは誤入力の修正だけです。チームミッションには、歩数受付締切（最終日の翌日13:00）までの分が数えられます。
       </p>
@@ -25,7 +28,7 @@ export function RecordPage({ app, memberId, refresh }: PageProps) {
         {dates.map((date) => (
           <li key={date} className="record-row">
             <span>{formatDate(date)}</span>
-            <span>{records.has(date) ? formatSteps(records.get(date)!) : '記録なし'}</span>
+            <span>{records.has(date) ? <Steps steps={records.get(date)!} /> : '記録なし'}</span>
             <button
               type="button"
               className="ho-btn ho-btn--text"
@@ -92,6 +95,9 @@ function EditForm({ app, memberId, date, current, onDone }: EditFormProps) {
 
   return (
     <form onSubmit={submit} className="ho-dialog stack" aria-label={`${formatDate(date)}の歩数`}>
+      <span className="ho-dialog__title" aria-hidden="true">
+        記録
+      </span>
       <label className="ho-field">
         <span className="ho-field__label">{formatDate(date)}の歩数（その日の合計）</span>
         <input

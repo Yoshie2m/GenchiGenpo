@@ -41,6 +41,14 @@ jobs:
       - name: ビルド（型チェックを含む）
         run: npm run build
 
+      - name: tokens.css が tokens.json から作ったものと一致するか
+        run: |
+          npm run design:tokens
+          git diff --exit-code -- src/ui/design-system/tokens.css || {
+            echo "::error file=src/ui/design-system/tokens.css::tokens.css が tokens.json と食い違っています。npm run design:tokens を実行してコミットしてください"
+            exit 1
+          }
+
       - name: マスターデータが md から作ったものと一致するか
         run: |
           npm run master-data

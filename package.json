@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "master-data": "node scripts/generate-master-data.mjs"
+    "master-data": "node scripts/generate-master-data.mjs",
+    "design:tokens": "node scripts/generate-design-tokens.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

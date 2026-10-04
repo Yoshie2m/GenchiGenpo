@@ -2,21 +2,24 @@ import { useEffect, useState } from 'react'
 import type { App as AppServices } from '../composition.ts'
 import type { MemberId } from '../publishedLanguage/memberId.ts'
 import { DevPanel } from './DevPanel.tsx'
+import { logoUrl } from './design-system/assets.ts'
+import { Icon, type IconName } from './design-system/components.tsx'
+import { UiContext } from './design-system/uiContext.ts'
 import { JourneyPage } from './pages/JourneyPage.tsx'
 import { RecordPage } from './pages/RecordPage.tsx'
 import { SettingsPage } from './pages/SettingsPage.tsx'
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
-import { applyTheme, loadSettings, saveSettings, type Settings } from './settings.ts'
+import { applyTheme, isNight, loadSettings, saveSettings, type Settings } from './settings.ts'
 
-const TABS = [
-  { id: 'today', label: '今日' },
-  { id: 'record', label: '記録' },
-  { id: 'journey', label: '道中' },
-  { id: 'team', label: '隊' },
-  { id: 'settings', label: '設定' },
-] as const
-type TabId = (typeof TABS)[number]['id']
+const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
+  { id: 'today', label: '今日', icon: 'ho' },
+  { id: 'record', label: '記録', icon: 'ki' },
+  { id: 'journey', label: '道中', icon: 'michi' },
+  { id: 'team', label: '隊', icon: 'tai' },
+  { id: 'settings', label: '設定', icon: 'setsu' },
+]
+type TabId = 'today' | 'record' | 'journey' | 'team' | 'settings'
 
 const MEMBER_KEY = 'genchigenpo:devCurrentMember'
 
@@ -32,14 +35,36 @@ function initialMember(app: AppServices): MemberId {
 }
 
 /** PoC の画面の骨組み: 下部の5タブ（今日 / 記録 / 道中 / 隊 / 設定）と開発用画面。 */
+function tabFromHash(): TabId {
+  const id = window.location.hash.slice(1)
+  return TABS.some((t) => t.id === id) ? (id as TabId) : 'today'
+}
+
 export default function App({ app }: { app: AppServices }) {
-  const [tab, setTab] = useState<TabId>('today')
+  const [tab, setTabState] = useState<TabId>(tabFromHash)
   const [memberId, setMemberId] = useState<MemberId>(() => initialMember(app))
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [, setVersion] = useState(0)
   const refresh = () => setVersion((v) => v + 1)
+  const night = isNight(settings.theme)
 
-  useEffect(() => applyTheme(settings.theme), [settings.theme])
+  useEffect(() => applyTheme(night), [night])
+
+  // 開いているタブを URL の # に合わせる（戻るボタンで前のタブに戻れる）
+  useEffect(() => {
+    const onChange = () => setTabState(tabFromHash())
+    window.addEventListener('hashchange', onChange)
+    window.addEventListener('popstate', onChange)
+    return () => {
+      window.removeEventListener('hashchange', onChange)
+      window.removeEventListener('popstate', onChange)
+    }
+  }, [])
+
+  function setTab(id: TabId) {
+    setTabState(id)
+    if (window.location.hash !== `#${id}`) window.history.pushState(null, '', `#${id}`)
+  }
 
   function changeMember(id: MemberId) {
     setMemberId(id)
@@ -59,32 +84,38 @@ export default function App({ app }: { app: AppServices }) {
   const props = { app, memberId, refresh, settings }
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1>現地現物</h1>
-        <p className="ho-field__label">{me?.displayName}さん</p>
+    <UiContext.Provider value={{ night, showArabic: settings.showArabic }}>
+      <div className="app">
+        <header className="app__header">
+          <img src={logoUrl(night)} alt="歩" className="app__logo" />
+          <div>
+            <h1 className="app__title">現地現物</h1>
+            <p className="fs-caption">{me?.displayName}さん</p>
+          </div>
+        </header>
         <DevPanel app={app} memberId={memberId} onMemberChange={changeMember} refresh={refresh} />
-      </header>
-      <main className="app__main">
-        {tab === 'today' && <TodayPage {...props} />}
-        {tab === 'record' && <RecordPage {...props} />}
-        {tab === 'journey' && <JourneyPage {...props} />}
-        {tab === 'team' && <TeamPage {...props} />}
-        {tab === 'settings' && <SettingsPage settings={settings} onChange={changeSettings} />}
-      </main>
-      <nav className="ho-tabbar app__tabs" aria-label="主要">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className="ho-tab"
-            aria-current={tab === t.id ? 'page' : undefined}
-            onClick={() => setTab(t.id)}
-          >
-            <span className="ho-tab__label">{t.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
+        <main className="app__main">
+          {tab === 'today' && <TodayPage {...props} />}
+          {tab === 'record' && <RecordPage {...props} />}
+          {tab === 'journey' && <JourneyPage {...props} />}
+          {tab === 'team' && <TeamPage {...props} />}
+          {tab === 'settings' && <SettingsPage settings={settings} onChange={changeSettings} />}
+        </main>
+        <nav className="ho-tabbar app__tabs" aria-label="主要">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className="ho-tab"
+              aria-current={tab === t.id ? 'page' : undefined}
+              onClick={() => setTab(t.id)}
+            >
+              <Icon name={t.icon} />
+              <span className="ho-tab__label">{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </UiContext.Provider>
   )
 }

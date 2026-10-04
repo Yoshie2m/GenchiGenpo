@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { localDateOf } from '../../shared/LocalDate.ts'
+import { Daiji, TeamMark } from '../design-system/components.tsx'
 import { formatDate, formatSteps } from '../format.ts'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
@@ -35,13 +36,18 @@ export function TodayPage({ app, memberId, refresh }: PageProps) {
     }
   }
 
+  const myTeam =
+    team.kind === 'mission' && team.myTeam !== null
+      ? team.teams.find((t) => t.team === team.myTeam)
+      : undefined
+
   return (
-    <section aria-labelledby="today-title">
-      <h2 id="today-title">今日の歩み</h2>
-      <p>{formatDate(today)}</p>
-      <p className="ho-daiji" aria-label={`今日の歩数 ${todaySteps}歩`}>
-        {formatSteps(todaySteps)}
-      </p>
+    <section aria-labelledby="today-title" className="page">
+      <h2 id="today-title" className="fs-title">
+        今日の歩み
+      </h2>
+      <p className="fs-caption">{formatDate(today)}</p>
+      <Daiji steps={todaySteps} label="今日の歩数" />
 
       <form onSubmit={submit} className="stack">
         <label className="ho-field">
@@ -58,13 +64,22 @@ export function TodayPage({ app, memberId, refresh }: PageProps) {
           記録する
         </button>
       </form>
-      {message && <p role="status">{message}</p>}
-
-      {team.kind === 'mission' && team.myTeam !== null && (
-        <p>
-          {team.teams.find((t) => t.team === team.myTeam)?.name}・{team.plan.destination.name}
-          {team.myTopTwoToday && <span className="ho-tanzaku__top"> 今日の上位に入っています</span>}
+      {message && (
+        <p role="status" className="fs-body">
+          {message}
         </p>
+      )}
+
+      {team.kind === 'mission' && myTeam && (
+        <div className={`ho-tanzaku ho-tanzaku--team ho-tanzaku--mine ho-team--${myTeam.team}`}>
+          <span className="ho-tanzaku__band" aria-hidden="true" />
+          <span className="ho-teamname">
+            <TeamMark team={myTeam.team} mine />
+            {myTeam.name}
+          </span>
+          <div className="ho-tanzaku__sub">目指すは {team.plan.destination.name}</div>
+          {team.myTopTwoToday && <div className="ho-tanzaku__top">今日の上位に入っています</div>}
+        </div>
       )}
     </section>
   )

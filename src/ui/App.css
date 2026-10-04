@@ -1,142 +1,129 @@
-/* フェーズ4の最小限の見た目。フェーズ4.5でデザインシステム「歩（ほ）」に置き換える。 */
+/*
+ * 画面の配置だけを書く。色・字・余白・角丸はデザインシステム「歩（ほ）」のトークンとクラス
+ * （design-system/tokens.css・bundle.css）を使い、値を直書きしない。
+ */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  line-height: 1.7;
+  padding: 0;
 }
 .app {
-  max-width: 480px;
+  max-width: 400px;
   margin: 0 auto;
-  padding: 0 16px 96px;
+  padding: var(--ma-3) var(--ma-3) 96px;
+}
+.app__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ma-3);
+}
+.app__logo {
+  height: 56px;
+  width: auto;
+}
+.app__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--ai-strong);
 }
 .app__tabs {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  display: flex;
-  max-width: 480px;
+  max-width: 400px;
   margin: 0 auto;
-  background: #fff;
-  border-top: 1px solid #888;
 }
-.ho-tab {
-  flex: 1;
-  min-height: 56px;
-  background: none;
-  border: 0;
-  font-size: 16px;
+.page > * + * {
+  margin-top: var(--ma-3);
 }
-.ho-tab[aria-current='page'] {
-  font-weight: bold;
-  text-decoration: underline;
-}
-.ho-daiji {
-  font-size: 40px;
-  font-weight: bold;
-  margin: 8px 0;
+.page h2,
+.page h3 {
+  color: var(--ai-strong);
+  margin-bottom: 0;
 }
 .stack > * + * {
-  margin-top: 8px;
+  margin-top: var(--ma-2);
 }
 .block {
   display: block;
 }
 .memo {
   white-space: pre-line;
+  margin: var(--ma-2) 0 0;
 }
 .record-list,
-.candidate-list,
-.ho-cplog,
-.ho-routeline__track {
+.candidate-list {
   list-style: none;
+  margin: 0;
   padding: 0;
 }
 .record-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  gap: var(--ma-2);
   align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid #ddd;
+  padding: var(--ma-2) 0;
+  border-bottom: var(--line-hair) solid var(--ai-light);
 }
 .record-row > form {
   grid-column: 1 / -1;
+  margin-top: var(--ma-3);
 }
-.ho-routeline__track {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-}
-.ho-routeline__stop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 64px;
-  font-size: 12px;
-  opacity: 0.6;
-}
-.ho-routeline__stop.is-passed,
-.ho-routeline__stop[aria-current='location'] {
-  opacity: 1;
-}
-.kind {
-  font-size: 11px;
-}
-.ho-cplog__row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px;
-  padding: 4px 0;
-  border-bottom: 1px solid #ddd;
-}
-.ho-tanzaku {
-  border: 1px solid #888;
-  padding: 12px;
-  margin-bottom: 12px;
-}
-.ho-tanzaku--mine {
-  border-width: 2px;
-}
-.ho-tanzaku__head {
-  display: flex;
-  justify-content: space-between;
-}
-.ho-tanzaku__value {
-  font-size: 24px;
-  font-weight: bold;
-}
-.ho-tanzaku__sub,
-.ho-field__label {
-  font-size: 12px;
-}
-.ho-field__input {
+.journey__scene {
   display: block;
   width: 100%;
-  min-height: 44px;
-  font-size: 16px;
+  max-height: 200px;
+  object-fit: cover;
+  object-position: center 40%;
 }
-.ho-btn {
-  min-height: 44px;
-  padding: 0 16px;
+.ho-routeline__track {
+  overflow-x: auto;
+}
+.team__goal {
+  display: flex;
+  align-items: center;
+  gap: var(--ma-3);
+}
+.team__logo {
+  height: 64px;
+  width: auto;
+}
+.team-list {
+  display: grid;
+  gap: var(--ma-3);
+}
+.candidate {
+  margin-bottom: var(--ma-3);
+}
+.candidate__logo {
+  height: 48px;
+  width: auto;
+}
+.seal-line {
+  display: flex;
+  align-items: center;
+  gap: var(--ma-3);
+}
+.settings__group {
+  border: var(--line-hair) solid var(--ai-light);
+  border-radius: var(--radius-1);
 }
 .dev-panel {
-  margin: 8px 0;
-  padding: 8px;
-  border: 1px dashed #888;
-  font-size: 14px;
+  margin: var(--ma-2) 0;
+  padding: var(--ma-2);
+  border: var(--line-hair) dashed var(--ai-mid);
+  font-family: var(--font-gothic);
+  font-size: 13px;
 }
 .dev-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0;
-}
-progress {
-  width: 100%;
+  gap: var(--ma-2);
+  margin: var(--ma-2) 0;
 }

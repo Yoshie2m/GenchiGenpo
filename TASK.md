@@ -55,10 +55,10 @@
 - [x] 開発用画面: メンバーの切り替え（ログインなし）、日付を進める、ダミーの歩数を自動で入れる
 
 #### フェーズ4.5: デザインシステム「歩（ほ）」の取り込み
-- [ ] `tokens.json` から CSS 変数（昼・夜の2テーマ）を作る（ARCHITECTURE.md 2.1）
-- [ ] フォント（Google Fonts の明朝・角ゴシック）と素材（ロゴ・目的地ロゴ・国の景色・ピクトグラム・タブのアイコン・文様）を取り込む
-- [ ] 大字（壱弍参…）の表示と、算用数字の `aria-label` を作る
-- [ ] デザインシステムのコンポーネント（TabBar・Daiji・Tanzaku・Seal・Button・Dialog・Controls・BarChart と、追加した TeamMark・WaveBand・RouteLine・CheckpointLog）の見た目を画面に当てる
+- [x] `tokens.json` から CSS 変数（昼・夜の2テーマ）を作る（ARCHITECTURE.md 2.1）
+- [x] フォント（Google Fonts の明朝・角ゴシック）と素材（ロゴ・目的地ロゴ・国の景色・ピクトグラム・タブのアイコン・文様）を取り込む
+- [x] 大字（壱弍参…）の表示と、算用数字の `aria-label` を作る
+- [x] デザインシステムのコンポーネント（TabBar・Daiji・Tanzaku・Seal・Button・Dialog・Controls・BarChart と、追加した TeamMark・WaveBand・RouteLine・CheckpointLog）の見た目を画面に当てる
 
 #### フェーズ5: 仕上げ（任意）
 - [ ] MobimonGO の画面キャプチャ取り込みを移植する（ブラウザ内の文字認識なので PoC でも動く）

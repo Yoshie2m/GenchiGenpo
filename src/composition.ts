@@ -87,17 +87,22 @@ export function createApp(options: AppOptions = {}) {
         steps.recordStepsAt(d.memberId, d.date, d.steps, d.source, d.reflectedAt)
       }
     },
-    /** 今日の分のダミーの歩数を、指定したメンバー以外のダミーメンバーに入れる。 */
+    /**
+     * 今日の分のダミーの歩数を、指定したメンバー以外のダミーメンバーに入れる。
+     * 反映日時は1人ずつ1分ずらす（全員が同じ時刻だと、中間地点がいつも同着になるため）。
+     */
     fillDemoStepsForToday(except: MemberId | null): void {
-      const today = localDateOf(clock.now())
-      for (const profile of DEMO_MEMBERS) {
-        if (profile.id === except) continue
+      const now = clock.now()
+      const today = localDateOf(now)
+      DEMO_MEMBERS.forEach((profile, i) => {
+        if (profile.id === except) return
         const value = demoStepsOf(profile, today)
-        if (value === null) continue
+        if (value === null) return
         const id = profile.id as MemberId
         const current = steps.recordsOf(id).find((r) => r.date === today)?.steps ?? 0
-        if (value > current) steps.recordSteps(id, today, value, 'manual')
-      }
+        const at = new Date(now.getTime() - (DEMO_MEMBERS.length - i) * 60_000)
+        if (value > current) steps.recordStepsAt(id, today, value, 'manual', at)
+      })
       team.tick()
     },
     advanceDays(days: number): void {

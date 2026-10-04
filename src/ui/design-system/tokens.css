@@ -1,0 +1,94 @@
+/* このファイルは scripts/generate-design-tokens.mjs が tokens.json から作る。直接編集しない（npm run design:tokens）。 */
+
+:root,
+[data-theme='light'] {
+  --washi-base: #EEF2F3;
+  --washi-shade: #E1E9EE;
+  --washi-deep: #CCD9E4;
+  --ai-light: #9DB5D0;
+  --ai-mid: #5A7FAE;
+  --ai-strong: #2F4F82;
+  --ai-deep: #1C3158;
+  --sumi: #1B2433;
+  --sumi-soft: #55627A;
+  --shu: #C23B2E;
+  --shu-soft: #E9B7AE;
+  --kin-nezu: #B8A07A;
+  --seal-ink: #EEF2F3;
+  --moon: #F1E7C8;
+}
+
+[data-theme='night'] {
+  --washi-base: #0F1B33;
+  --washi-shade: #172646;
+  --washi-deep: #2C416C;
+  --ai-light: #4A6896;
+  --ai-mid: #7C9CC9;
+  --ai-strong: #A9C0E2;
+  --ai-deep: #E6ECF2;
+  --sumi: #E6ECF2;
+  --sumi-soft: #A3B1C8;
+  --shu: #C23B2E;
+  --shu-soft: #E9B7AE;
+  --kin-nezu: #B8A07A;
+  --seal-ink: #EEF2F3;
+  --moon: #F1E7C8;
+}
+
+:root {
+  --ma-1: 4px; /* 線と文字の隙。 */
+  --ma-2: 8px; /* 要素内の余白。 */
+  --ma-3: 16px; /* 要素間。短冊の内側余白。 */
+  --ma-4: 32px; /* セクション間。 */
+  --ma-5: 64px; /* 大きな「景色」の余白。 */
+  --radius-0: 0px; /* 和紙の裁ち口。面・帯・グラフの棒。 */
+  --radius-1: 1px; /* 短冊カード。 */
+  --radius-2: 2px; /* ボタン、落款、入力まわり。 */
+  --line-hair: 1px; /* 罫線、題簽の枠。色は ai-light。 */
+  --line-sumi: 1.5px; /* 墨線（主要な形の輪郭）、枠ボタン、入力欄の下線。色は ai-deep または ai-strong。 */
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-brush: "Yuji Boku", "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --font-heading: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Old Mincho", "Noto Serif JP", serif;
+  --font-gothic: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+}
+
+/* 今日の歩数（大字）。色は ai-deep。筆致を強めたい場合のみ family を brush に替える。 */
+.fs-daiji {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+/* 画面題。縦書きで題簽に収めるのを基本とする。 */
+.fs-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+/* セクション見出し。 */
+.fs-h2 {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+/* 本文。和文は行間を広く（1.8）。 */
+.fs-body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.8;
+  font-weight: 400;
+}
+
+/* 補助文字。12px 以下は明朝のかすれを避け角ゴシックを使う。 */
+.fs-caption {
+  font-family: var(--font-gothic);
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 400;
+}

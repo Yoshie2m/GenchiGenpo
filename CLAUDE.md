@@ -21,9 +21,10 @@ npm run format       # Prettier で整形（*.md は対象外）
 npm run format:check # 整形の確認のみ
 npm run build        # 型チェック（tsc -b）とビルド
 npm run master-data  # md（hq-to-shintora-route.md・team-tokaido-mobility-map.md）からマスターデータを作り直す
+npm run design:tokens # デザインシステムの tokens.json から tokens.css を作り直す
 ```
 
-GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドと、マスターデータが md と一致するかを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
+GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドと、マスターデータが md と一致するか、tokens.css が tokens.json と一致するかを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
 
 ## コードの構成
 
@@ -75,6 +76,10 @@ README のスキーマ（`users`・`teams`・`steps`、`steps` のIDは `ユー�
 ## デザインシステム
 
 画面はデザインシステム「歩（ほ）」（https://claude.ai/artifact/84sXxh4US9sshyPAgtgZCF）に従う。画面を作る前に、Artifact の read で `project/README.md` と `project/tokens.json` を読む。要点と GenchiGenpo との食い違いは ARCHITECTURE.md「2.1 デザインシステム」にまとめてある。
+
+- PoC には `src/ui/design-system/` に取り込んである。`tokens.json`・`bundle.css`・`assets/` はデザインシステムの写し（直接編集せず、デザインシステム側を直してから写し直す）、`tokens.css` は `npm run design:tokens` で作る生成物。
+- 色・字・余白・角丸はトークン（CSS 変数）とデザインシステムのクラス（`ho-*`、`fs-*`）だけを使い、値を直書きしない。`src/ui/App.css` には画面の配置だけを書く。
+- 歩数は大字（`src/ui/daiji.ts`、`Daiji`・`Steps` コンポーネント）で表し、`aria-label` に算用数字を付ける。昼・夜で素材（`*-day` / `*-night`）を切り替える。
 
 ## 言語
 

@@ -15,10 +15,12 @@ export function SettingsPage({
   onChange: (settings: Settings) => void
 }) {
   return (
-    <section aria-labelledby="settings-title">
-      <h2 id="settings-title">設定</h2>
-      <fieldset>
-        <legend>画面の色</legend>
+    <section aria-labelledby="settings-title" className="page stack">
+      <h2 id="settings-title" className="fs-title">
+        設定
+      </h2>
+      <fieldset className="settings__group">
+        <legend className="fs-h2">画面の色</legend>
         {THEMES.map((t) => (
           <label key={t.value} className="block">
             <input

@@ -1,9 +1,9 @@
 import type { LocalDate } from '../shared/LocalDate.ts'
 import type { TeamMissionView } from '../teamMission/application/TeamMissionService.ts'
 
-/** 歩数の表示（フェーズ4.5で大字に切り替える）。 */
+/** 歩数を算用数字で表す（メッセージなど、文の中で大字を使わないところ）。 */
 export function formatSteps(steps: number): string {
-  return `${Math.round(steps).toLocaleString('ja-JP')}歩`
+  return `${Math.floor(steps).toLocaleString('ja-JP')}歩`
 }
 
 /** 「10月4日（日）」の形。 */

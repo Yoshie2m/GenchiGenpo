@@ -29,10 +29,13 @@ export function saveSettings(settings: Settings): void {
   }
 }
 
-/** 昼・夜のテーマを画面に当てる（OS に合わせるときは OS の設定を見る）。 */
-export function applyTheme(theme: ThemeSetting): void {
-  const night =
-    theme === 'night' ||
-    (theme === 'os' && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+/** 夜のテーマにするか（OS に合わせるときは OS の設定を見る）。 */
+export function isNight(theme: ThemeSetting): boolean {
+  if (theme === 'os') return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+  return theme === 'night'
+}
+
+/** 昼・夜のテーマを画面に当てる。 */
+export function applyTheme(night: boolean): void {
   document.documentElement.dataset.theme = night ? 'night' : 'light'
 }
