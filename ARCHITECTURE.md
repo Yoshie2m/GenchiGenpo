@@ -100,11 +100,30 @@ AI による推奨設計案（検討ボード）もここに集める。
   - 宿場印 【採用】: PoC では作らない。通過点の通過記録は、ピクトグラム（宿場町・峠・オフィス）と地名の一覧で見せる。印が必要かは PoC を触ってから決める。
   - タブのアイコン 【採用】: 5つ（今日＝歩、記録＝記、道中＝道、隊＝隊、設定＝設）を、デザインシステムの仕様（24px グリッド、線幅1.5px、角は丸、藍1色）で作り、デザインシステム「歩（ほ）」の素材として追加する（PoC 以外でも使い回せるように）。
 
-## 3. レイヤー構造
+## 3. レイヤー構造 【採用】
 
-（未検討。Presentation / Application / Domain / Infrastructure の分け方と依存方向をここに書く）
+コンテキストの分け方は DOMAINS.md 2章。PoC（Vite）ではコンテキストごとにフォルダを分け、その中をレイヤーで分ける。
 
-- コンテキストの分け方は DOMAINS.md 2章（歩数記録・チームミッション・個人ミッション・ミッション候補・メンバー）【採用】。PoC ではこの5つをソースコードのフォルダの分け方にし、コンテキスト間は「歩数が記録された」などのイベントと問い合わせだけでつなぐ（具体的な構成はフェーズ0で決める）。
+```
+src/
+  stepRecord/         歩数記録
+  teamMission/        チームミッション（中核）
+  personalMission/    個人ミッション
+  missionCandidate/   ミッション候補
+  member/             メンバー
+    domain/           Entity・Value Object・ドメインサービス・ドメインイベント・Repository のインターフェース（純粋な TypeScript）
+    application/      ユースケース（Application Service）。domain を使い、Repository を通して保存する
+    infrastructure/   Repository の実装（PoC は localStorage、本番は Supabase）
+  publishedLanguage/  コンテキスト間でやり取りするイベント・問い合わせの型（例: 「歩数が記録された」）
+  shared/             どのコンテキストからも使う小さな部品（時計、日本時間の日付、イベントの受け渡し、ID）
+  ui/                 画面（React）。各コンテキストの application だけを呼ぶ
+```
+
+**依存の向き**（ESLint の `no-restricted-imports` で強制する。`eslint.config.js`）
+- `ui/` → 各コンテキストの `application/` → `domain/`。`infrastructure/` は `domain/` のインターフェースを実装する。
+- `domain/` は `application/`・`infrastructure/`・`ui/`・React に依存しない。
+- コンテキスト同士は直接 import しない。`publishedLanguage/` の型を介して、イベントと問い合わせだけでつなぐ。
+- `shared/` はどこからでも使ってよい。`shared/` からコンテキストには依存しない。
 
 ## 4. 推奨設計案の比較
 

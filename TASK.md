@@ -20,8 +20,8 @@
 **チーム数: PoC では2チーム（壱番隊・弐番隊）で実装する。** DOMAINS.md の「必ず3チーム」は変えない。チーム数は設定値にして、あとで3チームに戻せるように作る。2チームのときは、順位は1位〜2位、中間通過ポイントは1位・2位の配点（3位の0歩はなし）、同順位は「1位・1位」、途中参加は壱番隊→弐番隊の順になる。
 
 #### フェーズ0: 準備
-- [ ] プロジェクトを作る（Vite + React + TypeScript、ESLint、Prettier、Vitest）。MobimonGO の設定を参考にする
-- [ ] ARCHITECTURE.md の「レイヤー構造」を埋める（Presentation / Application / Domain / Infrastructure の分け方と依存の向き）
+- [x] プロジェクトを作る（Vite + React + TypeScript、ESLint、Prettier、Vitest）。MobimonGO の設定を参考にする
+- [x] ARCHITECTURE.md の「レイヤー構造」を埋める（Presentation / Application / Domain / Infrastructure の分け方と依存の向き）
 
 #### フェーズ1: ドメイン（純粋な TypeScript。テストを手厚く書く）
 - [ ] 歩数（1日30,000歩で頭打ち、日次合計の上書き・小さい値は受け付けない）と日付（日本時間）

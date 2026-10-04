@@ -1,0 +1,42 @@
+# push と Pull Request のたびに、整形・lint・テスト・ビルドを確かめる。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: チェック
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: 依存パッケージのインストール
+        run: npm ci
+
+      - name: 整形チェック
+        run: npm run format:check
+
+      - name: lint（依存の向きのルールを含む）
+        run: npm run lint
+
+      - name: テスト
+        run: npm test
+
+      - name: ビルド（型チェックを含む）
+        run: npm run build

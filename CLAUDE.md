@@ -4,7 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクトの状況
 
-本リポジトリは**要件定義・技術選定の段階**にある。中身は `README.md` のみで、ソースコード・パッケージ定義・ビルド設定・Linter・テストはまだ存在しないため、ビルド/Lint/テストのコマンドはない。フレームワークを導入したら本ファイルを更新すること。
+DDD で設計を進めながら、**フロントエンドだけで動く PoC**（Vite + React + TypeScript、データは localStorage）を作っている段階。PoC のタスクは `TASK.md` の「PoC」の欄にある。
+
+## コマンド
+
+Node は `.nvmrc`（26）。
+
+```bash
+npm install          # 依存パッケージのインストール
+npm run dev          # 開発サーバー
+npm test             # テスト（Vitest）
+npx vitest run src/ui/App.test.tsx   # 1ファイルだけテストする
+npm run test:watch   # 変更を見てテストを繰り返す
+npm run lint         # ESLint（依存の向きのルールを含む）
+npm run format       # Prettier で整形（*.md は対象外）
+npm run format:check # 整形の確認のみ
+npm run build        # 型チェック（tsc -b）とビルド
+```
+
+GitHub Actions（`.github/workflows/ci.yml`）が push と Pull Request のたびに、整形チェック・lint・テスト・ビルドを確かめる。push する前に、手元で同じコマンドが通ることを確かめること。
+
+## コードの構成
+
+- `src/` はコンテキスト（`stepRecord` / `teamMission` / `personalMission` / `missionCandidate` / `member`）ごとに分け、その中を `domain/` / `application/` / `infrastructure/` に分ける。コンテキスト間の型は `publishedLanguage/`、共通の部品は `shared/`、画面は `ui/`。詳細は ARCHITECTURE.md「3. レイヤー構造」。
+- 依存の向きは `eslint.config.js` で強制している。コンテキスト同士を直接 import しない、`domain/` は React や他レイヤーに依存しない、`ui/` は `application/` だけを呼ぶ。
+- コードの名前は DOMAINS.md のユビキタス言語の英語名（例: 進行歩数 = ProgressSteps）に合わせる。
+- tsconfig の `erasableSyntaxOnly` が有効なため、コンストラクタ引数でのプロパティ宣言（`constructor(private readonly x: X)`）や enum は使えない。
 
 ## アプリ概要
 
