@@ -117,7 +117,15 @@ src/
   publishedLanguage/  コンテキスト間でやり取りするイベント・問い合わせの型（例: 「歩数が記録された」）
   shared/             どのコンテキストからも使う小さな部品（時計、日本時間の日付、イベントの受け渡し、ID）
   ui/                 画面（React）。各コンテキストの application だけを呼ぶ
+  dev/                PoC の開発用（ダミーメンバーと歩数）。本番では使わない
 ```
+
+**保存（PoC）** 【採用】
+- Repository のインターフェースは各コンテキストの `domain/`、localStorage の実装は `infrastructure/` に置く。本番では Supabase の実装に差し替える。
+- 保存の単位はコンテキストごとに1つのキー（`genchigenpo:stepRecord` / `:member` / `:personalMission` / `:teamMission` / `:missionCandidate`）。版番号付きで保存し（`shared/VersionedStorage.ts`）、形式を変えたら版を上げて変換関数を足す。
+- ドメインのオブジェクトは `toSnapshot()` / `fromSnapshot()`（または `reconstruct()`）で、ただのデータとの間を行き来する。日時は ISO 形式の文字列で保存する。
+- ミッション候補は中身をマスターデータに持ち、保存するのは並び順だけ。チームミッションは、作成時に写し取った候補の内容をミッションごとに保存する。
+- 時計は `Clock` で差し替える。PoC では `AdjustableClock`（本物の時刻＋進めた分）で「日付を進める」を実現し、進めた分は `genchigenpo:devClockOffset` に保存する。
 
 **依存の向き**（ESLint の `no-restricted-imports` で強制する。`eslint.config.js`）
 - `ui/` → 各コンテキストの `application/` → `domain/`。`infrastructure/` は `domain/` のインターフェースを実装する。

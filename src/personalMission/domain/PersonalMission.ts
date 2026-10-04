@@ -3,6 +3,14 @@ import type { StepsRecorded } from '../../publishedLanguage/stepRecordEvents.ts'
 import { atJst, type LocalDate } from '../../shared/LocalDate.ts'
 import { assertValidRoute, type Checkpoint, type Route } from './Route.ts'
 
+/** 保存・復元に使う形（ドメインの外へ渡すただのデータ）。 */
+export interface PersonalMissionSnapshot {
+  readonly memberId: MemberId
+  readonly startDate: LocalDate
+  readonly stepsByDate: readonly (readonly [LocalDate, number])[]
+  readonly arrivals: readonly CheckpointArrival[]
+}
+
 /** 通過点に着いた記録（どの通過点に、いつ着いたか）。 */
 export interface CheckpointArrival {
   readonly checkpointIndex: number
@@ -42,6 +50,27 @@ export class PersonalMission {
     return new PersonalMission(memberId, route, startDate, new Map(), [
       { checkpointIndex: 0, arrivedAt: atJst(startDate) },
     ])
+  }
+
+  /** 保存したデータから復元する。ルートは固定なので、保存せずに渡す。 */
+  static fromSnapshot(snapshot: PersonalMissionSnapshot, route: Route): PersonalMission {
+    assertValidRoute(route)
+    return new PersonalMission(
+      snapshot.memberId,
+      route,
+      snapshot.startDate,
+      new Map(snapshot.stepsByDate),
+      [...snapshot.arrivals],
+    )
+  }
+
+  toSnapshot(): PersonalMissionSnapshot {
+    return {
+      memberId: this.memberId,
+      startDate: this.startDate,
+      stepsByDate: [...this.stepsByDate.entries()],
+      arrivals: [...this.arrivals],
+    }
   }
 
   /**

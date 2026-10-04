@@ -38,9 +38,9 @@
 - [x] team-tokaido-mobility-map.md の9つの目的地（名称・代表漢字・読み・目標歩数・中間地点・配点）をデータにする（`missionCandidate/masterData/missionCandidates.ts`）
 
 #### フェーズ3: 保存と時間
-- [ ] localStorage に保存する Repository を作る（あとで Supabase 用に差し替えられる形にする）
-- [ ] 時計を差し替えられるようにする（「日付を進める」でミッションの流れを早送りできる）
-- [ ] ダミーメンバー（10人程度、平均歩数はばらばら）を用意する
+- [x] localStorage に保存する Repository を作る（あとで Supabase 用に差し替えられる形にする）（各コンテキストの `domain/*Repository.ts` と `infrastructure/LocalStorage*Repository.ts`）
+- [x] 時計を差し替えられるようにする（「日付を進める」でミッションの流れを早送りできる）（`shared/AdjustableClock.ts`）
+- [x] ダミーメンバー（10人程度、平均歩数はばらばら）を用意する（`dev/demoData.ts`）
 
 #### フェーズ4: 画面
 画面は5つ（今日 / 記録 / 道中 / 隊 / 設定）。見た目はフェーズ4.5でデザインシステムを取り込んで整える。

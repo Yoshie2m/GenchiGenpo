@@ -36,6 +36,23 @@ export interface WaypointStanding extends WaypointResult {
   readonly arrivedAt: Date
 }
 
+/** 保存・復元に使う形（ドメインの外へ渡すただのデータ）。 */
+export interface TeamMissionSnapshot {
+  readonly id: string
+  readonly plan: MissionPlan
+  readonly startDate: LocalDate
+  readonly teams: readonly {
+    readonly number: TeamNumber
+    readonly members: readonly MemberId[]
+    /** [メンバー, 日付, 歩数] */
+    readonly steps: readonly (readonly [MemberId, LocalDate, number])[]
+    /** [中間地点の番号, 到着時刻] */
+    readonly waypointArrivals: readonly (readonly [number, Date])[]
+  }[]
+  readonly finalDay: LocalDate | null
+  readonly firstArrivedTeam: TeamNumber | null
+}
+
 interface TeamState {
   readonly number: TeamNumber
   readonly members: Set<MemberId>
@@ -84,6 +101,39 @@ export class TeamMission {
     const mission = new TeamMission(id, plan, startDate, teams)
     for (const a of assignments) mission.addMember(a.memberId, a.team)
     return mission
+  }
+
+  /** 保存したデータから復元する。 */
+  static fromSnapshot(snapshot: TeamMissionSnapshot): TeamMission {
+    const teams = snapshot.teams.map((t) => ({
+      number: t.number,
+      members: new Set(t.members),
+      steps: new Map(t.steps.map(([m, d, s]) => [`${m}|${d}`, s] as const)),
+      waypointArrivals: new Map(t.waypointArrivals),
+    }))
+    const mission = new TeamMission(snapshot.id, snapshot.plan, snapshot.startDate, teams)
+    mission.finalDayValue = snapshot.finalDay
+    mission.firstArrivedTeamValue = snapshot.firstArrivedTeam
+    return mission
+  }
+
+  toSnapshot(): TeamMissionSnapshot {
+    return {
+      id: this.id,
+      plan: this.plan,
+      startDate: this.startDate,
+      teams: this.teams.map((t) => ({
+        number: t.number,
+        members: [...t.members],
+        steps: [...t.steps.entries()].map(([key, s]) => {
+          const [m, d] = key.split('|')
+          return [m as MemberId, d as LocalDate, s] as const
+        }),
+        waypointArrivals: [...t.waypointArrivals.entries()],
+      })),
+      finalDay: this.finalDayValue,
+      firstArrivedTeam: this.firstArrivedTeamValue,
+    }
   }
 
   /** メンバーを隊に入れる（開始時の振り分け・途中参加）。1つのミッションで1つの隊だけ。 */
