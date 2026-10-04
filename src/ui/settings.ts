@@ -3,13 +3,13 @@ export type ThemeSetting = 'os' | 'light' | 'night'
 
 export interface Settings {
   readonly theme: ThemeSetting
-  /** 大字の下に算用数字を併記する（初期値はオフ）。 */
+  /** 大字の下に算用数字を併記する（初期値はオン）。 */
   readonly showArabic: boolean
 }
 
 const KEY = 'genchigenpo:uiSettings'
-/** 初期値は昼（端末が夜の設定でも、昼の色合いで始める）。 */
-export const DEFAULT_SETTINGS: Settings = { theme: 'light', showArabic: false }
+/** 初期値は昼（端末が夜の設定でも、昼の色合いで始める）で、大字の下に算用数字を併記する。 */
+export const DEFAULT_SETTINGS: Settings = { theme: 'light', showArabic: true }
 
 export function loadSettings(): Settings {
   try {

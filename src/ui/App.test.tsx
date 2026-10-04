@@ -44,7 +44,7 @@ test('下部の5タブで画面を切り替える', async () => {
     ['記録', '記録'],
     ['道中', '道中'],
     ['隊', '隊'],
-    ['設定', '設定'],
+    ['番付', '番付'],
     ['今日', '今日の歩み'],
   ]) {
     await user.click(tab(name))
@@ -121,13 +121,42 @@ test('初めて開いたときは昼の色合い', () => {
   expect(document.documentElement.dataset.theme).toBe('light')
 })
 
-test('設定で昼・夜を切り替えられる', async () => {
+test('表示の設定（開発用画面の中）で昼・夜を切り替えられる', async () => {
   const { user } = setup()
-  await user.click(tab('設定'))
+  await user.click(screen.getByText(/開発用/))
   await user.click(screen.getByLabelText('夜（藍染の夜）'))
   expect(document.documentElement.dataset.theme).toBe('night')
   await user.click(screen.getByLabelText('昼（和紙）'))
   expect(document.documentElement.dataset.theme).toBe('light')
+})
+
+test('初めて開いたときは、大字の下に算用数字を併記する', async () => {
+  const { user } = setup()
+  await user.type(screen.getByLabelText('今日の歩数（その日の合計）'), '8432')
+  await user.click(screen.getByRole('button', { name: '記録する' }))
+  expect(screen.getByText('8,432 歩')).toBeInTheDocument()
+})
+
+test('番付: 今日の歩数 → 全日数の総歩数 → 平均歩数 の順に、上位5名を棒グラフで比べる', async () => {
+  const { app, user } = setup()
+  const me = app.members.members()[0]
+  app.steps.recordSteps(me.memberId, parseLocalDate('2026-10-04'), 30000, 'manual')
+  app.dev.fillDemoStepsForToday(me.memberId)
+  await user.click(tab('番付'))
+  const charts = screen.getAllByRole('region').filter((r) => r.classList.contains('ranking'))
+  expect(charts.map((c) => c.getAttribute('aria-label'))).toEqual([
+    '今日の歩数',
+    '全日数の総歩数',
+    '平均歩数',
+  ])
+  for (const chart of charts) {
+    expect(within(chart).getAllByRole('listitem').length).toBeLessThanOrEqual(6)
+  }
+  // 今日の歩数は 30,000 歩の自分が壱位
+  const todayRows = within(charts[0]).getAllByRole('listitem')
+  expect(todayRows[0]).toHaveTextContent('壱位')
+  expect(todayRows[0]).toHaveTextContent(`${me.displayName}（自分）`)
+  expect(todayRows[0]).toHaveClass('is-mine')
 })
 
 test('画面キャプチャを読み取り、確認画面で確かめてから取り込む', async () => {

@@ -2,18 +2,24 @@ import { useState } from 'react'
 import type { App } from '../composition.ts'
 import type { MemberId } from '../publishedLanguage/memberId.ts'
 import { formatDateTime } from './format.ts'
+import { SettingsPage } from './pages/SettingsPage.tsx'
+import type { Settings } from './settings.ts'
 
-/** 開発用画面（PoC だけ）: メンバーの切り替え、日付を進める、ダミーの歩数を入れる。 */
+/** 開発用画面（PoC だけ）: メンバーの切り替え、日付を進める、ダミーの歩数を入れる、表示の設定。 */
 export function DevPanel({
   app,
   memberId,
   onMemberChange,
   refresh,
+  settings,
+  onSettingsChange,
 }: {
   app: App
   memberId: MemberId
   onMemberChange: (id: MemberId) => void
   refresh: () => void
+  settings: Settings
+  onSettingsChange: (settings: Settings) => void
 }) {
   const [name, setName] = useState('')
   const run = (action: () => void) => () => {
@@ -72,6 +78,7 @@ export function DevPanel({
         </label>{' '}
         <button type="submit">登録する</button>
       </form>
+      <SettingsPage settings={settings} onChange={onSettingsChange} />
     </details>
   )
 }

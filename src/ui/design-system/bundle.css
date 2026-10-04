@@ -115,7 +115,16 @@ body { background: var(--washi-base); color: var(--sumi); font-family: var(--fon
 .ho-tanzaku__rank { font-family: var(--font-heading); font-weight: 600; font-size: 20px; line-height: 1.4; color: var(--ai-strong); }
 .ho-tanzaku__top { margin-top: var(--ma-1); font-family: var(--font-gothic); font-size: 12px; line-height: 1.6; color: var(--ai-strong); }
 
+.ho-ranking__list { list-style: none; margin: var(--ma-2) 0 0; padding: 0; }
+.ho-ranking__row { display: grid; grid-template-columns: 3em 1fr; grid-template-areas: 'rank name' 'rank bar' 'rank value'; column-gap: var(--ma-2); padding: var(--ma-2) 0; border-bottom: 1px solid var(--ai-light); }
+.ho-ranking__rank { grid-area: rank; align-self: center; font-family: var(--font-heading); font-weight: 600; font-size: 16px; color: var(--ai-strong); }
+.ho-ranking__name { grid-area: name; font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--sumi); }
+.ho-ranking__bar { grid-area: bar; display: block; height: 12px; background: var(--washi-deep); border-radius: var(--radius-0); }
+.ho-ranking__bar > span { display: block; height: 100%; background: var(--ai-mid); border-radius: var(--radius-0); transition: width 600ms ease-out; }
+.ho-ranking__row.is-mine .ho-ranking__bar > span { background: var(--ai-deep); }
+.ho-ranking__value { grid-area: value; font-family: var(--font-display); font-weight: 800; font-size: 16px; color: var(--ai-deep); }
+
 @media (prefers-reduced-motion: reduce) {
   .ho-seal--press { animation: none; }
-  .ho-switch__arrow, .ho-switch__track, .ho-btn, .ho-tab, .ho-waveband__fill { transition: none; }
+  .ho-switch__arrow, .ho-switch__track, .ho-btn, .ho-tab, .ho-waveband__fill, .ho-ranking__bar > span { transition: none; }
 }

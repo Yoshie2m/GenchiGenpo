@@ -6,8 +6,8 @@ import { logoUrl } from './design-system/assets.ts'
 import { Icon, type IconName } from './design-system/components.tsx'
 import { UiContext } from './design-system/uiContext.ts'
 import { JourneyPage } from './pages/JourneyPage.tsx'
+import { RankingPage } from './pages/RankingPage.tsx'
 import { RecordPage } from './pages/RecordPage.tsx'
-import { SettingsPage } from './pages/SettingsPage.tsx'
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
 import { applyTheme, isNight, loadSettings, saveSettings, type Settings } from './settings.ts'
@@ -17,9 +17,9 @@ const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
   { id: 'record', label: '記録', icon: 'ki' },
   { id: 'journey', label: '道中', icon: 'michi' },
   { id: 'team', label: '隊', icon: 'tai' },
-  { id: 'settings', label: '設定', icon: 'setsu' },
+  { id: 'ranking', label: '番付', icon: 'banzuke' },
 ]
-type TabId = 'today' | 'record' | 'journey' | 'team' | 'settings'
+type TabId = 'today' | 'record' | 'journey' | 'team' | 'ranking'
 
 /** コンセプト文（デザインシステム「アプリ名とコンセプト」。言い換えずにそのまま使う）。どのタブでも上部に出す。 */
 export const CONCEPT =
@@ -38,7 +38,7 @@ function initialMember(app: AppServices): MemberId {
   return (members.find((m) => m.memberId === saved) ?? members[0]).memberId
 }
 
-/** PoC の画面の骨組み: 下部の5タブ（今日 / 記録 / 道中 / 隊 / 設定）と開発用画面。 */
+/** PoC の画面の骨組み: 下部の5タブ（今日 / 記録 / 道中 / 隊 / 番付）と開発用画面（表示の設定もここ）。 */
 function tabFromHash(): TabId {
   const id = window.location.hash.slice(1)
   return TABS.some((t) => t.id === id) ? (id as TabId) : 'today'
@@ -98,13 +98,20 @@ export default function App({ app }: { app: AppServices }) {
           </div>
           <p className="app__concept">{CONCEPT}</p>
         </header>
-        <DevPanel app={app} memberId={memberId} onMemberChange={changeMember} refresh={refresh} />
+        <DevPanel
+          app={app}
+          memberId={memberId}
+          onMemberChange={changeMember}
+          refresh={refresh}
+          settings={settings}
+          onSettingsChange={changeSettings}
+        />
         <main className="app__main">
           {tab === 'today' && <TodayPage {...props} />}
           {tab === 'record' && <RecordPage {...props} />}
           {tab === 'journey' && <JourneyPage {...props} />}
           {tab === 'team' && <TeamPage {...props} />}
-          {tab === 'settings' && <SettingsPage settings={settings} onChange={changeSettings} />}
+          {tab === 'ranking' && <RankingPage {...props} />}
         </main>
         <nav className="ho-tabbar app__tabs" aria-label="主要">
           {TABS.map((t) => (

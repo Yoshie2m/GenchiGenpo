@@ -6,7 +6,7 @@ const THEMES: { value: ThemeSetting; label: string }[] = [
   { value: 'os', label: '端末の設定に合わせる' },
 ]
 
-/** 設定: 昼・夜の切り替え、算用数字の併記。 */
+/** 表示の設定: 昼・夜の切り替え、算用数字の併記（開発用画面の中に置く）。 */
 export function SettingsPage({
   settings,
   onChange,
@@ -15,10 +15,10 @@ export function SettingsPage({
   onChange: (settings: Settings) => void
 }) {
   return (
-    <section aria-labelledby="settings-title" className="page stack">
-      <h2 id="settings-title" className="fs-title">
-        設定
-      </h2>
+    <section aria-labelledby="settings-title" className="stack">
+      <h3 id="settings-title" className="fs-h2">
+        表示の設定
+      </h3>
       <fieldset className="settings__group">
         <legend className="fs-h2">画面の色</legend>
         {THEMES.map((t) => (

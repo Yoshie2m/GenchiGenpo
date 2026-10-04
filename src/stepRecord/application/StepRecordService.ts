@@ -1,11 +1,21 @@
 import type { MemberId } from '../../publishedLanguage/memberId.ts'
-import type { StepHistory } from '../../publishedLanguage/queries.ts'
+import type { MemberSummary, StepHistory } from '../../publishedLanguage/queries.ts'
 import type { StepsRecorded } from '../../publishedLanguage/stepRecordEvents.ts'
 import type { Clock } from '../../shared/Clock.ts'
-import type { LocalDate } from '../../shared/LocalDate.ts'
+import { addDays, type LocalDate } from '../../shared/LocalDate.ts'
 import { DailySteps, type DailyStepsChange, type StepSource } from '../domain/DailySteps.ts'
 import type { DailyStepsRepository } from '../domain/DailyStepsRepository.ts'
+import { topEntries, type LeaderboardEntry } from '../domain/leaderboard.ts'
 import { personalAverage } from '../domain/personalAverage.ts'
+
+export type { LeaderboardEntry }
+
+/** 番付（今日の歩数・全日数の総歩数・平均歩数の上位5名）。 */
+export interface Leaderboard {
+  readonly today: readonly LeaderboardEntry[]
+  readonly total: readonly LeaderboardEntry[]
+  readonly average: readonly LeaderboardEntry[]
+}
 
 /** 記録の結果（画面で知らせる内容）。 */
 export interface RecordResult {
@@ -91,6 +101,38 @@ export class StepRecordService implements StepHistory {
     const earliest = records.at(-1)?.date
     const from = earliest !== undefined && earliest < registeredDate ? earliest : registeredDate
     return personalAverage(records, from, until)
+  }
+
+  /**
+   * 番付: 登録メンバーの今日の歩数・全日数の総歩数・平均歩数の上位5名（DOMAINS.md「番付」）。
+   * - 今日の歩数: 今日の歩数を記録したメンバーだけを並べる。
+   * - 総歩数: 2026年10月1日からのすべての記録の合計。
+   * - 平均歩数: 個人の平均歩数を、昨日までのすべての日（記録しなかった日は 0 歩）で出す。
+   *   今日はまだ途中の歩数なので数えない。昨日までに数える日がない人（今日登録した人）は載せない。
+   */
+  leaderboard(members: readonly MemberSummary[], today: LocalDate): Leaderboard {
+    const records = this.repository.load()
+    const of = (id: MemberId) => records.filter((r) => r.memberId === id)
+    return {
+      today: topEntries(
+        members.flatMap((m) => {
+          const r = of(m.memberId).find((x) => x.date === today)
+          return r ? [{ memberId: m.memberId, value: r.steps }] : []
+        }),
+      ),
+      total: topEntries(
+        members.map((m) => ({
+          memberId: m.memberId,
+          value: of(m.memberId).reduce((sum, r) => sum + r.steps, 0),
+        })),
+      ),
+      average: topEntries(
+        members.flatMap((m) => {
+          const average = this.averageOf(m.memberId, m.registeredDate, addDays(today, -1))
+          return average === null ? [] : [{ memberId: m.memberId, value: average }]
+        }),
+      ),
+    }
   }
 
   private change(

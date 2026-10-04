@@ -79,6 +79,8 @@ const ICON_PATHS = {
   tai: '<path d="M6 3v18"/><path d="M6 4.5h11.5v10H6"/><path d="M9.5 8h4.5M9.5 11h4.5"/>',
   setsu:
     '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 10h18"/><path d="M7.5 5v14M12 5v14M16.5 5v14"/><rect x="6" y="6.5" width="3" height="2" rx="1"/><rect x="10.5" y="6.5" width="3" height="2" rx="1"/><rect x="15" y="6.5" width="3" height="2" rx="1"/><rect x="6" y="11.5" width="3" height="2" rx="1"/><rect x="10.5" y="14.5" width="3" height="2" rx="1"/><rect x="15" y="11.5" width="3" height="2" rx="1"/>',
+  banzuke:
+    '<path d="M4 3v18"/><rect x="6" y="5" width="14" height="3.5" rx="1"/><rect x="6" y="10.25" width="10" height="3.5" rx="1"/><rect x="6" y="15.5" width="6" height="3.5" rx="1"/>',
 } as const
 export type IconName = keyof typeof ICON_PATHS
 
