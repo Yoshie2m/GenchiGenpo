@@ -42,6 +42,10 @@ README のスキーマ（`users`・`teams`・`steps`、`steps` のIDは `ユー�
 - 設計案を出すときは選択肢を比較したうえで推奨案と理由を示し、`ARCHITECTURE.md` の「推奨設計案の比較」に残す。却下した案も理由とともに残す。
 - 対話で未決の論点や宿題が出たら `TASK.md` に追加する。タスクが完了したら結論を該当ファイルに反映し、`TASK.md` では「完了」に移す。
 
+## デザインシステム
+
+画面はデザインシステム「歩（ほ）」（https://claude.ai/artifact/84sXxh4US9sshyPAgtgZCF）に従う。画面を作る前に、Artifact の read で `project/README.md` と `project/tokens.json` を読む。要点と GenchiGenpo との食い違いは ARCHITECTURE.md「2.1 デザインシステム」にまとめてある。
+
 ## 言語
 
 プロジェクトのドキュメントは日本語で書かれている。特に指示がない限り、新しいドキュメントも日本語で統一する。
