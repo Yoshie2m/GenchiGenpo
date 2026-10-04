@@ -34,6 +34,7 @@ README のスキーマ（`users`・`teams`・`steps`、`steps` のIDは `ユー�
 | `DOMAINS.md` | ユビキタス言語辞書、境界づけられたコンテキスト、Entity / Value Object とビジネスルール、ドメインイベント | **技術的な話（DB、フレームワーク、API、画面など）は一切書かない** |
 | `ARCHITECTURE.md` | レイヤー構造、AI の推奨設計案の比較、Repository、DB 設計、Application Service | ビジネスルールの新規定義（先に DOMAINS.md で決める） |
 | `hq-to-shintora-route.md` | 個人ミッションの固定ルート（東海道五十三次）の概要と通過点（個人チェックポイント）の一覧・累計歩数・一口メモ | ルールそのもの（DOMAINS.md の「個人ミッション」に書く） |
+| `team-tokaido-mobility-map.md` | チームミッションの目的地（ミッション候補）の一覧と、到達日数・中間地点の目安 | ルールそのもの（DOMAINS.md に書く） |
 
 運用ルール:
 - 用語は `DOMAINS.md` の辞書に定義してから使う。`ARCHITECTURE.md` やコードでも辞書と同じ名前を使う。
