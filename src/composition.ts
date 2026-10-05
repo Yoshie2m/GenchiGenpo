@@ -86,50 +86,50 @@ export function createApp(options: AppOptions = {}) {
   bus.subscribe('StepsRecorded', (e) => team.onStepsRecorded(e))
 
   /** メンバーを登録し、個人ミッションの旅を始める（チームミッションには次の tick で途中参加する）。 */
-  function registerMember(displayName: string) {
-    const member = members.register(displayName)
-    personal.ensureStarted(member.id, member.registeredDate)
-    team.tick()
+  async function registerMember(displayName: string) {
+    const member = await members.register(displayName)
+    await personal.ensureStarted(member.id, member.registeredDate)
+    await team.tick()
     return member
   }
 
   /** 開発用の操作（PoC の開発用画面から使う）。 */
   const dev = {
     /** メンバーが1人もいなければ、ダミーメンバー10人とその歩数を入れる。 */
-    seedDemoIfEmpty(): void {
-      if (members.members().length > 0) return
+    async seedDemoIfEmpty(): Promise<void> {
+      if ((await members.members()).length > 0) return
       const data = buildDemoData(clock.now())
-      members.replaceAll(data.members)
-      for (const m of data.members) personal.ensureStarted(m.id, m.registeredDate)
+      await members.replaceAll(data.members)
+      for (const m of data.members) await personal.ensureStarted(m.id, m.registeredDate)
       for (const d of data.dailySteps) {
-        steps.recordStepsAt(d.memberId, d.date, d.steps, d.source, d.reflectedAt)
+        await steps.recordStepsAt(d.memberId, d.date, d.steps, d.source, d.reflectedAt)
       }
     },
     /**
      * 今日の分のダミーの歩数を、指定したメンバー以外のダミーメンバーに入れる。
      * 反映日時は1人ずつ1分ずらす（全員が同じ時刻だと、中間地点がいつも同着になるため）。
      */
-    fillDemoStepsForToday(except: MemberId | null): void {
+    async fillDemoStepsForToday(except: MemberId | null): Promise<void> {
       const now = clock.now()
       const today = localDateOf(now)
-      DEMO_MEMBERS.forEach((profile, i) => {
-        if (profile.id === except) return
+      for (const [i, profile] of DEMO_MEMBERS.entries()) {
+        if (profile.id === except) continue
         const value = demoStepsOf(profile, today)
-        if (value === null) return
+        if (value === null) continue
         const id = profile.id as MemberId
-        const current = steps.recordsOf(id).find((r) => r.date === today)?.steps ?? 0
+        const current = (await steps.recordsOf(id)).find((r) => r.date === today)?.steps ?? 0
         const at = new Date(now.getTime() - (DEMO_MEMBERS.length - i) * 60_000)
-        if (value > current) steps.recordStepsAt(id, today, value, 'manual', at)
-      })
-      team.tick()
+        if (value > current) await steps.recordStepsAt(id, today, value, 'manual', at)
+      }
+      await team.tick()
     },
-    advanceDays(days: number): void {
+    async advanceDays(days: number): Promise<void> {
       clock.advanceDays(days)
-      team.tick()
+      await team.tick()
     },
-    advanceHours(hours: number): void {
+    async advanceHours(hours: number): Promise<void> {
       clock.advance(hours * 60 * 60 * 1000)
-      team.tick()
+      await team.tick()
     },
     resetClock(): void {
       clock.reset()

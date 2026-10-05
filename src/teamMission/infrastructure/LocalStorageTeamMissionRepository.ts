@@ -36,7 +36,7 @@ export class LocalStorageTeamMissionRepository implements TeamMissionRepository 
     this.storage = new VersionedStorage<Stored>(storage, TEAM_MISSION_STORAGE_KEY, VERSION)
   }
 
-  load(): TeamMissionState {
+  async load(): Promise<TeamMissionState> {
     return {
       missions: (this.storage.load()?.missions ?? []).map((m) =>
         TeamMission.fromSnapshot({
@@ -56,7 +56,7 @@ export class LocalStorageTeamMissionRepository implements TeamMissionRepository 
     }
   }
 
-  save(state: TeamMissionState): void {
+  async save(state: TeamMissionState): Promise<void> {
     this.storage.save({
       missions: state.missions.map((mission) => {
         const s = mission.toSnapshot()

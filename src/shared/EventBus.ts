@@ -1,6 +1,6 @@
-type Handler<E> = (event: E) => void
+type Handler<E> = (event: E) => void | Promise<void>
 
-/** アプリ内でイベントを同期的に配送する。 */
+/** アプリ内でイベントを配送する。ハンドラは登録順に、1つずつ待ってから次へ進む。 */
 export class EventBus<E extends { type: string }> {
   private readonly handlers = new Map<E['type'], Handler<E>[]>()
 
@@ -16,7 +16,7 @@ export class EventBus<E extends { type: string }> {
     }
   }
 
-  publish(event: E): void {
-    for (const handler of this.handlers.get(event.type as E['type']) ?? []) handler(event)
+  async publish(event: E): Promise<void> {
+    for (const handler of this.handlers.get(event.type as E['type']) ?? []) await handler(event)
   }
 }

@@ -1,6 +1,7 @@
 import { provinceSceneUrl } from '../design-system/assets.ts'
 import { Daiji, Icon, Pictogram, Steps } from '../design-system/components.tsx'
 import { formatDate, formatDateTime } from '../format.ts'
+import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
 
 /**
@@ -8,8 +9,8 @@ import type { PageProps } from './types.ts'
  * 次の通過点と一口メモ、街道の線（RouteLine）、通過記録（CheckpointLog）を出す。
  * 通過点に着いても特別な表示は出さない（記録が残るだけ）。
  */
-export function JourneyPage({ app, memberId }: PageProps) {
-  const view = app.personal.view(memberId)
+export function JourneyPage({ app, memberId, version }: PageProps) {
+  const view = useAsyncData(() => app.personal.view(memberId), [app, memberId, version])
   if (!view) {
     return (
       <section className="page">

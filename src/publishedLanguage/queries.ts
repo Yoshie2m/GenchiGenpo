@@ -16,21 +16,23 @@ export interface MemberSummary {
 }
 
 export interface MemberDirectory {
-  members(): readonly MemberSummary[]
+  members(): Promise<readonly MemberSummary[]>
 }
 
 /** 歩数記録 → チームミッション: 個人の平均歩数（チーム振り分けに使う）と、これまでの歩数（途中参加に使う）。 */
 export interface StepHistory {
   /** 平均歩数。数える日がないときは null。 */
-  averageOf(memberId: MemberId, registeredDate: LocalDate, until: LocalDate): number | null
+  averageOf(memberId: MemberId, registeredDate: LocalDate, until: LocalDate): Promise<number | null>
   /** そのメンバーのこれまでの日ごとの歩数。 */
-  stepsOf(memberId: MemberId): readonly { readonly date: LocalDate; readonly steps: number }[]
+  stepsOf(
+    memberId: MemberId,
+  ): Promise<readonly { readonly date: LocalDate; readonly steps: number }[]>
 }
 
 /** ミッション候補 → チームミッション: 候補の一覧と、使った候補を一番下に回す操作。 */
 export interface MissionCandidateCatalog {
-  list(): readonly MissionPlan[]
-  markUsed(candidateId: string): void
+  list(): Promise<readonly MissionPlan[]>
+  markUsed(candidateId: string): Promise<void>
 }
 
 /** アプリ内で配送するイベント。 */

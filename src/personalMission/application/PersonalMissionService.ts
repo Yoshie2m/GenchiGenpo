@@ -32,25 +32,28 @@ export class PersonalMissionService {
   }
 
   /** まだ旅立っていなければ旅立たせる（登録日から）。 */
-  ensureStarted(memberId: MemberId, registeredDate: LocalDate): void {
-    const all = this.repository.load()
+  async ensureStarted(memberId: MemberId, registeredDate: LocalDate): Promise<void> {
+    const all = await this.repository.load()
     if (all.some((m) => m.memberId === memberId)) return
-    this.repository.save([...all, PersonalMission.begin(memberId, this.route, registeredDate)])
+    await this.repository.save([
+      ...all,
+      PersonalMission.begin(memberId, this.route, registeredDate),
+    ])
   }
 
-  onStepsRecorded(event: StepsRecorded): void {
-    const all = this.repository.load()
+  async onStepsRecorded(event: StepsRecorded): Promise<void> {
+    const all = await this.repository.load()
     let mission = all.find((m) => m.memberId === event.memberId)
     if (!mission) {
       mission = PersonalMission.begin(event.memberId, this.route, event.date)
       all.push(mission)
     }
     mission.recordSteps(event)
-    this.repository.save(all)
+    await this.repository.save(all)
   }
 
-  view(memberId: MemberId): JourneyView | null {
-    const mission = this.repository.load().find((m) => m.memberId === memberId)
+  async view(memberId: MemberId): Promise<JourneyView | null> {
+    const mission = (await this.repository.load()).find((m) => m.memberId === memberId)
     if (!mission) return null
     const cps = this.route.checkpoints
     const currentIndex = cps.indexOf(mission.currentCheckpoint)

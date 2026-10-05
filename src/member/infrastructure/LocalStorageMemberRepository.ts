@@ -17,13 +17,13 @@ export class LocalStorageMemberRepository implements MemberRepository {
     this.storage = new VersionedStorage<Stored>(storage, MEMBER_STORAGE_KEY, VERSION)
   }
 
-  load(): Member[] {
+  async load(): Promise<Member[]> {
     return (this.storage.load()?.members ?? []).map((m) =>
       Member.register(m.id, m.displayName, parseLocalDate(m.registeredDate)),
     )
   }
 
-  save(members: readonly Member[]): void {
+  async save(members: readonly Member[]): Promise<void> {
     this.storage.save({
       members: members.map((m) => ({
         id: m.id,

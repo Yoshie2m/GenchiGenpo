@@ -18,7 +18,9 @@ function setup() {
   const steps = new StepRecordService(
     new LocalStorageDailyStepsRepository(localStorage),
     clock,
-    (e) => published.push(e),
+    (e) => {
+      published.push(e)
+    },
   )
   const service = new ScreenCaptureImportService(steps, clock, async () =>
     parseStepCalendar(sample.words),
@@ -35,46 +37,51 @@ describe('画面キャプチャの取り込み', () => {
     expect(review.rows.every((r) => r.status === 'outOfRange')).toBe(true)
   })
 
-  test('今日より後の日は取り込まない', () => {
+  test('今日より後の日は取り込まない', async () => {
     const { service } = setup()
-    const [row] = service.review(taro, [{ date: '2026-10-11', steps: 5000 }])
+    const [row] = await service.review(taro, [{ date: '2026-10-11', steps: 5000 }])
     expect(row.status).toBe('outOfRange')
   })
 
-  test('30,000歩を超える値は30,000歩で取り込み、止めたことを示す', () => {
+  test('30,000歩を超える値は30,000歩で取り込み、止めたことを示す', async () => {
     const { service, steps } = setup()
-    const [row] = service.review(taro, [{ date: '2026-10-03', steps: 130_000 }])
+    const [row] = await service.review(taro, [{ date: '2026-10-03', steps: 130_000 }])
     expect(row).toMatchObject({ steps: 30_000, capped: true, status: 'import' })
-    service.importRows(taro, [{ date: '2026-10-03', steps: 130_000 }])
-    expect(steps.recordsOf(taro)[0]).toMatchObject({ steps: 30_000, source: 'screenCapture' })
+    await service.importRows(taro, [{ date: '2026-10-03', steps: 130_000 }])
+    expect((await steps.recordsOf(taro))[0]).toMatchObject({
+      steps: 30_000,
+      source: 'screenCapture',
+    })
   })
 
-  test('今の記録より大きい日だけ取り込み、同じ・小さい日は取り込まない', () => {
+  test('今の記録より大きい日だけ取り込み、同じ・小さい日は取り込まない', async () => {
     const { service, steps, published } = setup()
-    steps.recordSteps(taro, parseLocalDate('2026-10-01'), 8000, 'manual')
-    steps.recordSteps(taro, parseLocalDate('2026-10-02'), 8000, 'manual')
-    steps.recordSteps(taro, parseLocalDate('2026-10-03'), 8000, 'manual')
+    await steps.recordSteps(taro, parseLocalDate('2026-10-01'), 8000, 'manual')
+    await steps.recordSteps(taro, parseLocalDate('2026-10-02'), 8000, 'manual')
+    await steps.recordSteps(taro, parseLocalDate('2026-10-03'), 8000, 'manual')
     const readings = [
       { date: '2026-10-01', steps: 9000 },
       { date: '2026-10-02', steps: 8000 },
       { date: '2026-10-03', steps: 7000 },
       { date: '2026-10-04', steps: 6000 },
     ]
-    expect(service.review(taro, readings).map((r) => r.status)).toEqual([
+    expect((await service.review(taro, readings)).map((r) => r.status)).toEqual([
       'import',
       'same',
       'smaller',
       'import',
     ])
     published.length = 0
-    expect(service.importRows(taro, readings)).toEqual({ imported: 2, skipped: 2 })
+    expect(await service.importRows(taro, readings)).toEqual({ imported: 2, skipped: 2 })
     expect(published).toHaveLength(2)
-    expect(steps.recordsOf(taro).find((r) => r.date === '2026-10-03')?.steps).toBe(8000)
+    expect((await steps.recordsOf(taro)).find((r) => r.date === '2026-10-03')?.steps).toBe(8000)
   })
 
-  test('確認画面で負の数や小数を入れたら取り込めない', () => {
+  test('確認画面で負の数や小数を入れたら取り込めない', async () => {
     const { service } = setup()
-    expect(() => service.review(taro, [{ date: '2026-10-03', steps: -1 }])).toThrow(DomainError)
+    await expect(service.review(taro, [{ date: '2026-10-03', steps: -1 }])).rejects.toThrow(
+      DomainError,
+    )
   })
 
   test('読み取りに失敗したら、その理由を返す', async () => {

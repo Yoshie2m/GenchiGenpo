@@ -2,6 +2,7 @@ import type { LeaderboardEntry } from '../../stepRecord/application/StepRecordSe
 import { localDateOf } from '../../shared/LocalDate.ts'
 import { Steps } from '../design-system/components.tsx'
 import { formatDate } from '../format.ts'
+import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
 
 const RANK_LABELS = ['', '壱位', '弍位', '参位', '四位', '五位']
@@ -11,10 +12,15 @@ const RANK_LABELS = ['', '壱位', '弍位', '参位', '四位', '五位']
  * 上から 今日の歩数 → 全日数の総歩数 → 平均歩数 の順に並べる（デザインシステムの Ranking）。自分の棒は濃い藍で示す。
  * 平均歩数は昨日まで（今日は途中の歩数なので数えない）。
  */
-export function RankingPage({ app, memberId }: PageProps) {
+export function RankingPage({ app, memberId, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const names = new Map(app.members.members().map((m) => [m.memberId, m.displayName]))
-  const board = app.steps.leaderboard(app.members.members(), today)
+  const data = useAsyncData(async () => {
+    const members = await app.members.members()
+    const board = await app.steps.leaderboard(members, today)
+    return { names: new Map(members.map((m) => [m.memberId, m.displayName])), board }
+  }, [app, today, version])
+  if (!data) return null
+  const { names, board } = data
   return (
     <section aria-labelledby="ranking-title" className="page">
       <h2 id="ranking-title" className="fs-title">

@@ -13,11 +13,12 @@ export class CandidateService implements MissionCandidateCatalog {
   }
 
   /** 候補の一覧（並び順が自動確定の優先順。一番上が自動で決まる候補）。 */
-  list(): readonly MissionPlan[] {
-    return this.repository.load(this.master).candidates
+  async list(): Promise<readonly MissionPlan[]> {
+    return (await this.repository.load(this.master)).candidates
   }
 
-  markUsed(candidateId: string): void {
-    this.repository.save(this.repository.load(this.master).markUsed(candidateId))
+  async markUsed(candidateId: string): Promise<void> {
+    const list = await this.repository.load(this.master)
+    await this.repository.save(list.markUsed(candidateId))
   }
 }

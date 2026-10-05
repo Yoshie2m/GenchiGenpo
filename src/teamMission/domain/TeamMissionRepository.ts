@@ -7,6 +7,6 @@ export interface TeamMissionState {
 }
 
 export interface TeamMissionRepository {
-  load(): TeamMissionState
-  save(state: TeamMissionState): void
+  load(): Promise<TeamMissionState>
+  save(state: TeamMissionState): Promise<void>
 }

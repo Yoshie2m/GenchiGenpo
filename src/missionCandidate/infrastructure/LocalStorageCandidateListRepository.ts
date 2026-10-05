@@ -22,7 +22,7 @@ export class LocalStorageCandidateListRepository implements CandidateListReposit
    * 保存した並び順で候補を並べる。マスターデータに新しく増えた候補は末尾に足し、
    * なくなった候補は外す（マスターデータの中身が正）。
    */
-  load(master: readonly MissionPlan[]): CandidateList {
+  async load(master: readonly MissionPlan[]): Promise<CandidateList> {
     const order = this.storage.load()?.order ?? []
     const byId = new Map(master.map((p) => [p.candidateId, p]))
     const known = order.flatMap((id) => byId.get(id) ?? [])
@@ -30,7 +30,7 @@ export class LocalStorageCandidateListRepository implements CandidateListReposit
     return CandidateList.of([...known, ...added])
   }
 
-  save(list: CandidateList): void {
+  async save(list: CandidateList): Promise<void> {
     this.storage.save({ order: list.candidates.map((c) => c.candidateId) })
   }
 }

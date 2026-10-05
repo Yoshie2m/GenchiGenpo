@@ -11,6 +11,7 @@ import { RecordPage } from './pages/RecordPage.tsx'
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
 import { applyTheme, isNight, loadSettings, saveSettings, type Settings } from './settings.ts'
+import { useAsyncData } from './useAsyncData.ts'
 
 const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
   { id: 'today', label: '今日', icon: 'ho' },
@@ -27,8 +28,8 @@ export const CONCEPT =
 
 const MEMBER_KEY = 'genchigenpo:devCurrentMember'
 
-function initialMember(app: AppServices): MemberId {
-  const members = app.members.members()
+async function initialMember(app: AppServices): Promise<MemberId> {
+  const members = await app.members.members()
   let saved: string | null = null
   try {
     saved = localStorage.getItem(MEMBER_KEY)
@@ -46,13 +47,25 @@ function tabFromHash(): TabId {
 
 export default function App({ app }: { app: AppServices }) {
   const [tab, setTabState] = useState<TabId>(tabFromHash)
-  const [memberId, setMemberId] = useState<MemberId>(() => initialMember(app))
+  const [memberId, setMemberId] = useState<MemberId | null>(null)
   const [settings, setSettings] = useState<Settings>(loadSettings)
-  const [, setVersion] = useState(0)
+  const [version, setVersion] = useState(0)
   const refresh = () => setVersion((v) => v + 1)
   const night = isNight(settings.theme)
 
   useEffect(() => applyTheme(night), [night])
+
+  // 初回だけ、最初に表示するメンバーを非同期に決める。
+  useEffect(() => {
+    let active = true
+    initialMember(app).then((id) => {
+      if (active) setMemberId(id)
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 開いているタブを URL の # に合わせる（戻るボタンで前のタブに戻れる）
   useEffect(() => {
@@ -84,8 +97,14 @@ export default function App({ app }: { app: AppServices }) {
     saveSettings(next)
   }
 
-  const me = app.members.find(memberId)
-  const props = { app, memberId, refresh, settings }
+  const me = useAsyncData(
+    () => (memberId === null ? Promise.resolve(undefined) : app.members.find(memberId)),
+    [app, memberId, version],
+  )
+
+  if (memberId === null) return null
+
+  const props = { app, memberId, refresh, version, settings }
 
   return (
     <UiContext.Provider value={{ night, showArabic: settings.showArabic }}>
@@ -103,6 +122,7 @@ export default function App({ app }: { app: AppServices }) {
           memberId={memberId}
           onMemberChange={changeMember}
           refresh={refresh}
+          version={version}
           settings={settings}
           onSettingsChange={changeSettings}
         />

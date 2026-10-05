@@ -6,11 +6,11 @@ import { LocalStorageDailyStepsRepository } from './LocalStorageDailyStepsReposi
 describe('LocalStorageDailyStepsRepository', () => {
   beforeEach(() => localStorage.clear())
 
-  test('保存がなければ空', () => {
-    expect(new LocalStorageDailyStepsRepository(localStorage).load()).toEqual([])
+  test('保存がなければ空', async () => {
+    expect(await new LocalStorageDailyStepsRepository(localStorage).load()).toEqual([])
   })
 
-  test('保存した歩数（反映日時を含む）を読み戻せる', () => {
+  test('保存した歩数（反映日時を含む）を読み戻せる', async () => {
     const at = new Date('2026-10-04T12:00:00Z')
     const record = DailySteps.reconstruct(
       memberId('taro'),
@@ -19,8 +19,8 @@ describe('LocalStorageDailyStepsRepository', () => {
       'iosShortcut',
       at,
     )
-    new LocalStorageDailyStepsRepository(localStorage).save([record])
-    const [loaded] = new LocalStorageDailyStepsRepository(localStorage).load()
+    await new LocalStorageDailyStepsRepository(localStorage).save([record])
+    const [loaded] = await new LocalStorageDailyStepsRepository(localStorage).load()
     expect(loaded).toEqual(record)
     expect(loaded.reflectedAt).toEqual(at)
   })

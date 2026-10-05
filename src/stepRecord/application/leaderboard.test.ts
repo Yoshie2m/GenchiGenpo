@@ -12,7 +12,7 @@ const member = (id: string, registered = '2026-10-01') => ({
 })
 
 describe('StepRecordService.leaderboard（番付）', () => {
-  test('今日の歩数・総歩数・平均歩数の上位を返す', () => {
+  test('今日の歩数・総歩数・平均歩数の上位を返す', async () => {
     localStorage.clear()
     const at = new Date('2026-10-03T12:00:00Z') // 日本時間 10/3 21:00
     const steps = new StepRecordService(
@@ -20,11 +20,11 @@ describe('StepRecordService.leaderboard（番付）', () => {
       fixedClock(at),
       () => {},
     )
-    steps.recordSteps(memberId('a'), d('2026-10-01'), 20000, 'manual')
-    steps.recordSteps(memberId('a'), d('2026-10-03'), 1000, 'manual')
-    steps.recordSteps(memberId('b'), d('2026-10-03'), 9000, 'manual')
-    steps.recordSteps(memberId('c'), d('2026-10-03'), 6000, 'manual')
-    const board = steps.leaderboard(
+    await steps.recordSteps(memberId('a'), d('2026-10-01'), 20000, 'manual')
+    await steps.recordSteps(memberId('a'), d('2026-10-03'), 1000, 'manual')
+    await steps.recordSteps(memberId('b'), d('2026-10-03'), 9000, 'manual')
+    await steps.recordSteps(memberId('c'), d('2026-10-03'), 6000, 'manual')
+    const board = await steps.leaderboard(
       [member('a'), member('b'), member('c', '2026-10-03'), member('x')],
       d('2026-10-03'),
     )

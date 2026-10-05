@@ -4,6 +4,7 @@ import type { MemberId } from '../publishedLanguage/memberId.ts'
 import { formatDateTime } from './format.ts'
 import { SettingsPage } from './pages/SettingsPage.tsx'
 import type { Settings } from './settings.ts'
+import { useAsyncData } from './useAsyncData.ts'
 
 /** 開発用画面（PoC だけ）: メンバーの切り替え、日付を進める、ダミーの歩数を入れる、表示の設定。 */
 export function DevPanel({
@@ -11,6 +12,7 @@ export function DevPanel({
   memberId,
   onMemberChange,
   refresh,
+  version,
   settings,
   onSettingsChange,
 }: {
@@ -18,12 +20,14 @@ export function DevPanel({
   memberId: MemberId
   onMemberChange: (id: MemberId) => void
   refresh: () => void
+  version: number
   settings: Settings
   onSettingsChange: (settings: Settings) => void
 }) {
   const [name, setName] = useState('')
-  const run = (action: () => void) => () => {
-    action()
+  const members = useAsyncData(() => app.members.members(), [app, version])
+  const run = (action: () => void | Promise<void>) => async () => {
+    await action()
     refresh()
   }
   return (
@@ -32,7 +36,7 @@ export function DevPanel({
       <label className="block">
         メンバー{' '}
         <select value={memberId} onChange={(e) => onMemberChange(e.target.value as MemberId)}>
-          {app.members.members().map((m) => (
+          {(members ?? []).map((m) => (
             <option key={m.memberId} value={m.memberId}>
               {m.displayName}（登録 {m.registeredDate}）
             </option>
@@ -54,19 +58,19 @@ export function DevPanel({
         </button>
         <button
           type="button"
-          onClick={run(() => {
+          onClick={run(async () => {
             app.dev.clearAll()
-            app.dev.seedDemoIfEmpty()
+            await app.dev.seedDemoIfEmpty()
           })}
         >
           データを初期化する
         </button>
       </div>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault()
           if (name.trim() === '') return
-          const member = app.registerMember(name)
+          const member = await app.registerMember(name)
           setName('')
           onMemberChange(member.id)
           refresh()

@@ -25,7 +25,7 @@ export class LocalStorageDailyStepsRepository implements DailyStepsRepository {
     this.storage = new VersionedStorage<Stored>(storage, STEP_RECORD_STORAGE_KEY, VERSION)
   }
 
-  load(): DailySteps[] {
+  async load(): Promise<DailySteps[]> {
     return (this.storage.load()?.records ?? []).map((r) =>
       DailySteps.reconstruct(
         memberId(r.memberId),
@@ -37,7 +37,7 @@ export class LocalStorageDailyStepsRepository implements DailyStepsRepository {
     )
   }
 
-  save(records: readonly DailySteps[]): void {
+  async save(records: readonly DailySteps[]): Promise<void> {
     this.storage.save({
       records: records.map((r) => ({
         memberId: r.memberId,

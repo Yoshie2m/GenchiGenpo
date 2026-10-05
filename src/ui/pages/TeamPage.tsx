@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { MissionPlan } from '../../publishedLanguage/missionPlan.ts'
+import type { TeamMissionView } from '../../teamMission/application/TeamMissionService.ts'
 import { destinationLogoUrl } from '../design-system/assets.ts'
 import { Pictogram, Steps, TeamMark } from '../design-system/components.tsx'
 import { useUi } from '../design-system/uiContext.ts'
 import { formatDate, formatDateTime, STATUS_LABELS } from '../format.ts'
+import { useAsyncData } from '../useAsyncData.ts'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
 
@@ -14,20 +16,22 @@ const SHORT_NAMES = ['', '壱番隊', '弐番隊', '参番隊']
  * 隊: チームミッション。目的地のロゴと名称、隊ごとの進み具合（WaveBand）、順位（Tanzaku の隊用）。
  * 最終順位の確定後は、優勝チームのメンバーが次の目的地を選ぶ。到達・優勝は朱の落款を1つだけ押す。
  */
-export function TeamPage({ app, memberId, refresh }: PageProps) {
+export function TeamPage({ app, memberId, refresh, version }: PageProps) {
   const { night } = useUi()
-  const view = app.team.view(memberId)
+  const view = useAsyncData(() => app.team.view(memberId), [app, memberId, version])
   const [message, setMessage] = useState<string | null>(null)
 
-  function create(candidateId: string) {
+  async function create(candidateId: string) {
     try {
-      app.team.createMission(memberId, candidateId)
+      await app.team.createMission(memberId, candidateId)
       setMessage(null)
       refresh()
     } catch (e) {
       setMessage(errorMessage(e))
     }
   }
+
+  if (!view) return null
 
   if (view.kind === 'none') {
     return (
@@ -175,7 +179,7 @@ export function TeamPage({ app, memberId, refresh }: PageProps) {
   )
 }
 
-type MissionView = Extract<ReturnType<PageProps['app']['team']['view']>, { kind: 'mission' }>
+type MissionView = Extract<TeamMissionView, { kind: 'mission' }>
 
 /** 隊ごとの進み具合を、富士の裾から上がる波の帯で並べる（WaveBand）。 */
 function WaveBand({ view }: { view: MissionView }) {

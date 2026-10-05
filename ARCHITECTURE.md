@@ -333,6 +333,20 @@ Supabase無料枠の数値（2026年時点。[Supabase Pricing](https://supabase
 - `supabase/migrations/` に、ARCHITECTURE.md「データ永続化（DB）設計」のテーブル定義（`members`・`daily_steps`・`personal_missions` 系・`candidate_order`・`team_mission_state`）とRLSポリシーを、最初のmigrationとして書く。
 - CI（`.github/workflows/ci.yml`）に、`supabase db reset` で migrations が問題なく適用できるかを確認するジョブを追加する（TASK.md に反映済み）。
 
+### 接続情報の管理（.env／CI／本番・開発環境の分離） 【採用】
+
+Supabase のプロジェクト（`btkmlbhotcuqssbpzjdj`）を作成した。ローカル開発・テストと本番をどう分離し、APIキー（URL・anon key）をどこに置くかを決める。
+
+**決定: ローカルは Docker（`supabase start`）、本番は今回作成したプロジェクト専用【採用】**
+- ローカル開発・テストは、マイグレーション管理（上記、案A）で決めた `supabase start`（Docker）が立てるローカル Postgres に接続する。今回作成した `btkmlbhotcuqssbpzjdj` は本番専用とし、開発中の試行データを混ぜない。
+- 開発用に別のSupabaseプロジェクトを追加作成する案は、無料プランのプロジェクト数の上限を気にする必要が出るため見送った。
+- 環境変数は Vite の規約に合わせ `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` の2つ（`import.meta.env` で読む）。
+  - ローカル: `.env.local`（gitignore の `*.local` パターンでコミット対象外）に、`supabase start` が表示するローカルの URL・anon key を書く。リポジトリには値を含まない `.env.example` を置く。
+  - 本番: 値はリポジトリに置かず、Cloudflare Pages の Environment variables（Production）に `VITE_SUPABASE_URL=https://btkmlbhotcuqssbpzjdj.supabase.co` と、Supabase 管理画面（Project Settings → API）の anon key を設定する。
+- CI（GitHub Actions）: 現在のCIジョブ（整形・lint・テスト・ビルド・E2E）はSupabaseに接続しないため、追加のsecretsは不要。将来追加する `supabase db reset` のCIジョブ（上記「マイグレーション管理」）も、CIランナー内で起動する一時的なローカルPostgresに対して行うため、本番プロジェクトの資格情報は不要。
+- anon key は RLS 前提で公開されても安全な設計（上記「RLS（Row Level Security）の方針」）だが、取り扱いの手間を減らすためリポジトリにはコミットしない運用を変えない。
+- service_role key は今回の設計（クライアントが直接 RLS 経由で読み書きする）では使わない。将来必要になっても `VITE_` を先頭につけない（Vite はこの prefix を持つ環境変数だけをクライアントバンドルに含めるため、これが service_role key 漏洩を防ぐ主な防御線になる）。
+
 ### Application Service（ユースケース）
 
 **`tick()` の実行方式 【採用】（案C: クライアント実行＋楽観的ロック）**

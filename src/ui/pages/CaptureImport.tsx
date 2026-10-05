@@ -50,7 +50,7 @@ export function CaptureImport({ app, memberId, refresh }: Omit<PageProps, 'setti
     }
   }
 
-  function edit(index: number, value: string) {
+  async function edit(index: number, value: string) {
     if (state.kind !== 'review') return
     const steps = Number(value)
     if (value.trim() === '' || !Number.isInteger(steps) || steps < 0) return
@@ -58,13 +58,13 @@ export function CaptureImport({ app, memberId, refresh }: Omit<PageProps, 'setti
       date: r.date,
       steps: i === index ? steps : r.readSteps,
     }))
-    setState({ ...state, rows: app.screenCapture.review(memberId, readings) })
+    setState({ ...state, rows: await app.screenCapture.review(memberId, readings) })
   }
 
-  function confirm() {
+  async function confirm() {
     if (state.kind !== 'review') return
     try {
-      const summary = app.screenCapture.importRows(
+      const summary = await app.screenCapture.importRows(
         memberId,
         state.rows.map((r) => ({ date: r.date, steps: r.readSteps })),
       )

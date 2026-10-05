@@ -27,7 +27,7 @@ export class LocalStoragePersonalMissionRepository implements PersonalMissionRep
     this.route = route
   }
 
-  load(): PersonalMission[] {
+  async load(): Promise<PersonalMission[]> {
     return (this.storage.load()?.missions ?? []).map((m) =>
       PersonalMission.fromSnapshot(
         {
@@ -44,7 +44,7 @@ export class LocalStoragePersonalMissionRepository implements PersonalMissionRep
     )
   }
 
-  save(missions: readonly PersonalMission[]): void {
+  async save(missions: readonly PersonalMission[]): Promise<void> {
     this.storage.save({
       missions: missions.map((mission) => {
         const s = mission.toSnapshot()

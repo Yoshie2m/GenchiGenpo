@@ -19,30 +19,30 @@ export class MemberService implements MemberDirectory {
   }
 
   /** 登録する。登録日は今日（日本時間）。 */
-  register(displayName: string): Member {
+  async register(displayName: string): Promise<Member> {
     const member = Member.register(this.ids.next(), displayName, localDateOf(this.clock.now()))
-    this.repository.save([...this.repository.load(), member])
+    await this.repository.save([...(await this.repository.load()), member])
     return member
   }
 
   /** メンバーをまとめて入れ替える（ダミーデータの取り込み用）。 */
-  replaceAll(members: readonly Member[]): void {
-    this.repository.save(members)
+  async replaceAll(members: readonly Member[]): Promise<void> {
+    await this.repository.save(members)
   }
 
-  members(): MemberSummary[] {
-    return this.repository.load().map((m) => ({
+  async members(): Promise<MemberSummary[]> {
+    return (await this.repository.load()).map((m) => ({
       memberId: m.id,
       displayName: m.displayName,
       registeredDate: m.registeredDate,
     }))
   }
 
-  find(memberId: MemberId): MemberSummary | undefined {
-    return this.members().find((m) => m.memberId === memberId)
+  async find(memberId: MemberId): Promise<MemberSummary | undefined> {
+    return (await this.members()).find((m) => m.memberId === memberId)
   }
 
-  registeredDateOf(memberId: MemberId): LocalDate | undefined {
-    return this.find(memberId)?.registeredDate
+  async registeredDateOf(memberId: MemberId): Promise<LocalDate | undefined> {
+    return (await this.find(memberId))?.registeredDate
   }
 }

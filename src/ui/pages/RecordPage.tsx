@@ -2,20 +2,27 @@ import { useState, type FormEvent } from 'react'
 import { addDays, localDateOf, type LocalDate } from '../../shared/LocalDate.ts'
 import { Steps } from '../design-system/components.tsx'
 import { formatDate } from '../format.ts'
+import { useAsyncData } from '../useAsyncData.ts'
 import { CaptureImport } from './CaptureImport.tsx'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
 
 /** 記録: 日ごとの歩数の一覧、後日記録と誤入力の修正（本人が確認画面で）。 */
-export function RecordPage({ app, memberId, refresh }: PageProps) {
+export function RecordPage({ app, memberId, refresh, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const journey = app.personal.view(memberId)
-  const records = new Map(app.steps.recordsOf(memberId).map((r) => [r.date, r.steps]))
+  const data = useAsyncData(async () => {
+    const journey = await app.personal.view(memberId)
+    const records = new Map((await app.steps.recordsOf(memberId)).map((r) => [r.date, r.steps]))
+    return { journey, records }
+  }, [app, memberId, version])
+
+  const [editing, setEditing] = useState<LocalDate | null>(null)
+
+  if (!data) return null
+  const { journey, records } = data
   const start = journey?.startDate ?? today
   const dates: LocalDate[] = []
   for (let d = today; d >= start; d = addDays(d, -1)) dates.push(d)
-
-  const [editing, setEditing] = useState<LocalDate | null>(null)
 
   return (
     <section aria-labelledby="record-title" className="page">
@@ -25,7 +32,7 @@ export function RecordPage({ app, memberId, refresh }: PageProps) {
       <p className="ho-field__label">
         過去の日の歩数も、後から記録できます。減らせるのは誤入力の修正だけです。チームミッションには、歩数受付締切（最終日の翌日13:00）までの分が数えられます。
       </p>
-      <CaptureImport app={app} memberId={memberId} refresh={refresh} />
+      <CaptureImport app={app} memberId={memberId} refresh={refresh} version={version} />
       <ul className="record-list">
         {dates.map((date) => (
           <li key={date} className="record-row">
@@ -73,7 +80,7 @@ function EditForm({ app, memberId, date, current, onDone }: EditFormProps) {
   const [isCorrection, setIsCorrection] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     const value = Number(input)
     if (input.trim() === '' || !Number.isInteger(value)) {
@@ -87,8 +94,8 @@ function EditForm({ app, memberId, date, current, onDone }: EditFormProps) {
       return
     }
     try {
-      if (isCorrection) app.steps.correctSteps(memberId, date, value)
-      else app.steps.recordSteps(memberId, date, value, 'manual')
+      if (isCorrection) await app.steps.correctSteps(memberId, date, value)
+      else await app.steps.recordSteps(memberId, date, value, 'manual')
       onDone()
     } catch (err) {
       setMessage(errorMessage(err))

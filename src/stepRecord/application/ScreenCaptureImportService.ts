@@ -70,15 +70,17 @@ export class ScreenCaptureImportService {
     if (!result.ok) return result
     return {
       ok: true,
-      rows: this.review(memberId, toStepReadings(result.calendar)),
+      rows: await this.review(memberId, toStepReadings(result.calendar)),
       warnings: result.calendar.warnings,
     }
   }
 
   /** 読み取り結果（確認画面で直した値を含む）を、取り込みの扱いごとに並べる。 */
-  review(memberId: MemberId, readings: readonly StepReading[]): CaptureRow[] {
+  async review(memberId: MemberId, readings: readonly StepReading[]): Promise<CaptureRow[]> {
     const today = localDateOf(this.clock.now())
-    const current = new Map(this.steps.recordsOf(memberId).map((r) => [r.date, r.steps as number]))
+    const current = new Map(
+      (await this.steps.recordsOf(memberId)).map((r) => [r.date, r.steps as number]),
+    )
     return readings.map((reading) => {
       const error = stepValueError(reading.steps)
       if (error) throw new DomainError(`${reading.date}: ${error}`)
@@ -105,12 +107,15 @@ export class ScreenCaptureImportService {
   }
 
   /** 確認画面で確定した行のうち、取り込める行だけを記録する（取り込み元は画面キャプチャ）。 */
-  importRows(memberId: MemberId, readings: readonly StepReading[]): CaptureImportSummary {
-    const rows = this.review(memberId, readings)
+  async importRows(
+    memberId: MemberId,
+    readings: readonly StepReading[],
+  ): Promise<CaptureImportSummary> {
+    const rows = await this.review(memberId, readings)
     let imported = 0
     for (const row of rows) {
       if (row.status !== 'import') continue
-      this.steps.recordSteps(memberId, row.date, row.readSteps, 'screenCapture')
+      await this.steps.recordSteps(memberId, row.date, row.readSteps, 'screenCapture')
       imported++
     }
     return { imported, skipped: rows.length - imported }

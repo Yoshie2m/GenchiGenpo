@@ -2,18 +2,22 @@ import { useState, type FormEvent } from 'react'
 import { localDateOf } from '../../shared/LocalDate.ts'
 import { Daiji, TeamMark } from '../design-system/components.tsx'
 import { formatDate, formatSteps } from '../format.ts'
+import { useAsyncData } from '../useAsyncData.ts'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
 
 /** 今日: 今日の歩数、歩数の手入力、自分の隊と今日の上位2名に入っているか。 */
-export function TodayPage({ app, memberId, refresh }: PageProps) {
+export function TodayPage({ app, memberId, refresh, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const todaySteps = app.steps.recordsOf(memberId).find((r) => r.date === today)?.steps ?? 0
-  const team = app.team.view(memberId)
+  const data = useAsyncData(async () => {
+    const records = await app.steps.recordsOf(memberId)
+    const team = await app.team.view(memberId)
+    return { todaySteps: records.find((r) => r.date === today)?.steps ?? 0, team }
+  }, [app, memberId, today, version])
   const [input, setInput] = useState('')
   const [message, setMessage] = useState<string | null>(null)
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     const value = Number(input)
     if (input.trim() === '' || !Number.isInteger(value)) {
@@ -21,7 +25,7 @@ export function TodayPage({ app, memberId, refresh }: PageProps) {
       return
     }
     try {
-      const result = app.steps.recordSteps(memberId, today, value, 'manual')
+      const result = await app.steps.recordSteps(memberId, today, value, 'manual')
       setMessage(
         result.capped
           ? '30,000歩を超えたので、30,000歩で記録しました。読み間違いでないか確かめてください'
@@ -35,6 +39,9 @@ export function TodayPage({ app, memberId, refresh }: PageProps) {
       setMessage(errorMessage(err))
     }
   }
+
+  if (!data) return null
+  const { todaySteps, team } = data
 
   const myTeam =
     team.kind === 'mission' && team.myTeam !== null
