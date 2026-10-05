@@ -1,5 +1,6 @@
 # push と Pull Request のたびに、整形・lint・テスト・ビルドを確かめる。
-# チェックが通ったら E2E を動かし、main への push では両方が通ったあと Cloudflare Pages にデプロイする。
+# チェックが通ったら、Supabase（migrationsの適用・結合テスト）と E2E を動かし、
+# main への push では両方が通ったあと Cloudflare Pages にデプロイする。
 name: CI
 
 on:
@@ -58,6 +59,35 @@ jobs:
             exit 1
           }
 
+  supabase:
+    name: Supabase（migrations・結合テスト）
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: 依存パッケージのインストール
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: ローカルのSupabase（Docker）を起動し、migrationsを適用する
+        run: supabase start
+
+      - name: migrationsが問題なく適用できるか確認する（db reset）
+        run: supabase db reset
+
+      - name: 結合テスト（Supabase*Repositoryが実際のPostgresで動くか）
+        run: npm run test:integration
+
   e2e:
     name: 画面の自動テスト（E2E）
     needs: check
@@ -99,7 +129,7 @@ jobs:
 
   deploy:
     name: Cloudflare Pages にデプロイ
-    needs: [check, e2e]
+    needs: [check, supabase, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

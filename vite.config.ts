@@ -9,7 +9,16 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     // 実際に文字認識を行うテスト（通信が必要で遅い）は `npm run test:ocr` で別に実行する
+    // ローカルSupabase CLIに実際に接続する結合テストは `npm run test:integration` で別に実行する
     // e2e/ は Playwright のテスト（npm run e2e）なので、Vitest の対象から外す
-    exclude: ['**/node_modules/**', 'e2e/**', ...(process.env.OCR ? [] : ['**/*.ocr.test.ts'])],
+    exclude: [
+      '**/node_modules/**',
+      'e2e/**',
+      ...(process.env.OCR ? [] : ['**/*.ocr.test.ts']),
+      ...(process.env.INTEGRATION ? [] : ['**/*.integration.test.ts']),
+    ],
+    // 結合テストはローカルSupabase CLIという1つの外部のDBを共有するため、
+    // ファイルをまたいで同時に走らせない（データの競合を避ける）。
+    fileParallelism: process.env.INTEGRATION ? false : undefined,
   },
 })

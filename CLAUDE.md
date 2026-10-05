@@ -23,6 +23,7 @@ npm run build        # 型チェック（tsc -b）とビルド
 npm run master-data  # md（hq-to-shintora-route.md・team-tokaido-mobility-map.md）からマスターデータを作り直す
 npm run design:tokens # デザインシステムの tokens.json から tokens.css を作り直す
 npm run test:ocr     # 実際の文字認識で画面キャプチャのサンプルを読むテスト（初回は学習データの取得に通信が必要、*.ocr.test.ts）
+npm run test:integration # ローカルSupabase CLIに実際に接続する結合テスト（事前に `supabase start` が必要、*.integration.test.ts）
 npm run e2e          # 画面の自動テスト（Playwright。本番用のビルドを Chromium で動かす。初回は npx playwright install chromium）
 npx playwright test e2e/mission.spec.ts   # E2E を1ファイルだけ実行する
 ```
