@@ -25,7 +25,8 @@ export function DevPanel({
   onSettingsChange: (settings: Settings) => void
 }) {
   const [name, setName] = useState('')
-  const members = useAsyncData(() => app.members.members(), [app, version])
+  const membersState = useAsyncData(() => app.members.members(), [app, version])
+  const members = membersState.status === 'ready' ? membersState.data : []
   const run = (action: () => void | Promise<void>) => async () => {
     await action()
     refresh()
@@ -36,7 +37,7 @@ export function DevPanel({
       <label className="block">
         メンバー{' '}
         <select value={memberId} onChange={(e) => onMemberChange(e.target.value as MemberId)}>
-          {(members ?? []).map((m) => (
+          {members.map((m) => (
             <option key={m.memberId} value={m.memberId}>
               {m.displayName}（登録 {m.registeredDate}）
             </option>

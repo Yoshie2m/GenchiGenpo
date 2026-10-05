@@ -105,10 +105,11 @@ export default function App({ app, auth }: { app: AppServices; auth?: AuthSessio
     saveSettings(next)
   }
 
-  const me = useAsyncData(
+  const meState = useAsyncData(
     () => (memberId === null ? Promise.resolve(undefined) : app.members.find(memberId)),
     [app, memberId, version],
   )
+  const me = meState.status === 'ready' ? meState.data : undefined
 
   if (memberId === null) return null
 

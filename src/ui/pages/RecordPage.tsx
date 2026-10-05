@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { addDays, localDateOf, type LocalDate } from '../../shared/LocalDate.ts'
 import { Steps } from '../design-system/components.tsx'
 import { formatDate } from '../format.ts'
+import { AsyncView } from '../AsyncView.tsx'
 import { useAsyncData } from '../useAsyncData.ts'
 import { CaptureImport } from './CaptureImport.tsx'
 import { errorMessage } from './errorMessage.ts'
@@ -10,7 +11,7 @@ import type { PageProps } from './types.ts'
 /** 記録: 日ごとの歩数の一覧、後日記録と誤入力の修正（本人が確認画面で）。 */
 export function RecordPage({ app, memberId, refresh, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const data = useAsyncData(async () => {
+  const state = useAsyncData(async () => {
     const journey = await app.personal.view(memberId)
     const records = new Map((await app.steps.recordsOf(memberId)).map((r) => [r.date, r.steps]))
     return { journey, records }
@@ -18,51 +19,57 @@ export function RecordPage({ app, memberId, refresh, version }: PageProps) {
 
   const [editing, setEditing] = useState<LocalDate | null>(null)
 
-  if (!data) return null
-  const { journey, records } = data
-  const start = journey?.startDate ?? today
-  const dates: LocalDate[] = []
-  for (let d = today; d >= start; d = addDays(d, -1)) dates.push(d)
-
   return (
-    <section aria-labelledby="record-title" className="page">
-      <h2 id="record-title" className="fs-title">
-        記録
-      </h2>
-      <p className="ho-field__label">
-        過去の日の歩数も、後から記録できます。減らせるのは誤入力の修正だけです。チームミッションには、歩数受付締切（最終日の翌日13:00）までの分が数えられます。
-      </p>
-      <CaptureImport app={app} memberId={memberId} refresh={refresh} version={version} />
-      <ul className="record-list">
-        {dates.map((date) => (
-          <li key={date} className="record-row">
-            <span>{formatDate(date)}</span>
-            <span>{records.has(date) ? <Steps steps={records.get(date)!} /> : '記録なし'}</span>
-            <button
-              type="button"
-              className="ho-btn ho-btn--text"
-              onClick={() => setEditing(editing === date ? null : date)}
-              aria-expanded={editing === date}
-            >
-              {records.has(date) ? '直す' : '記録する'}
-            </button>
-            {editing === date && (
-              <EditForm
-                key={date}
-                app={app}
-                memberId={memberId}
-                date={date}
-                current={records.get(date) ?? null}
-                onDone={() => {
-                  setEditing(null)
-                  refresh()
-                }}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <AsyncView state={state}>
+      {({ journey, records }) => {
+        const start = journey?.startDate ?? today
+        const dates: LocalDate[] = []
+        for (let d = today; d >= start; d = addDays(d, -1)) dates.push(d)
+
+        return (
+          <section aria-labelledby="record-title" className="page">
+            <h2 id="record-title" className="fs-title">
+              記録
+            </h2>
+            <p className="ho-field__label">
+              過去の日の歩数も、後から記録できます。減らせるのは誤入力の修正だけです。チームミッションには、歩数受付締切（最終日の翌日13:00）までの分が数えられます。
+            </p>
+            <CaptureImport app={app} memberId={memberId} refresh={refresh} version={version} />
+            <ul className="record-list">
+              {dates.map((date) => (
+                <li key={date} className="record-row">
+                  <span>{formatDate(date)}</span>
+                  <span>
+                    {records.has(date) ? <Steps steps={records.get(date)!} /> : '記録なし'}
+                  </span>
+                  <button
+                    type="button"
+                    className="ho-btn ho-btn--text"
+                    onClick={() => setEditing(editing === date ? null : date)}
+                    aria-expanded={editing === date}
+                  >
+                    {records.has(date) ? '直す' : '記録する'}
+                  </button>
+                  {editing === date && (
+                    <EditForm
+                      key={date}
+                      app={app}
+                      memberId={memberId}
+                      date={date}
+                      current={records.get(date) ?? null}
+                      onDone={() => {
+                        setEditing(null)
+                        refresh()
+                      }}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }}
+    </AsyncView>
   )
 }
 

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { localDateOf } from '../../shared/LocalDate.ts'
 import { Daiji, TeamMark } from '../design-system/components.tsx'
 import { formatDate, formatSteps } from '../format.ts'
+import { AsyncView } from '../AsyncView.tsx'
 import { useAsyncData } from '../useAsyncData.ts'
 import { errorMessage } from './errorMessage.ts'
 import type { PageProps } from './types.ts'
@@ -9,7 +10,7 @@ import type { PageProps } from './types.ts'
 /** 今日: 今日の歩数、歩数の手入力、自分の隊と今日の上位2名に入っているか。 */
 export function TodayPage({ app, memberId, refresh, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const data = useAsyncData(async () => {
+  const state = useAsyncData(async () => {
     const records = await app.steps.recordsOf(memberId)
     const team = await app.team.view(memberId)
     return { todaySteps: records.find((r) => r.date === today)?.steps ?? 0, team }
@@ -40,54 +41,61 @@ export function TodayPage({ app, memberId, refresh, version }: PageProps) {
     }
   }
 
-  if (!data) return null
-  const { todaySteps, team } = data
-
-  const myTeam =
-    team.kind === 'mission' && team.myTeam !== null
-      ? team.teams.find((t) => t.team === team.myTeam)
-      : undefined
-
   return (
-    <section aria-labelledby="today-title" className="page">
-      <h2 id="today-title" className="fs-title">
-        今日の歩み
-      </h2>
-      <p className="fs-caption">{formatDate(today)}</p>
-      <Daiji steps={todaySteps} label="今日の歩数" />
+    <AsyncView state={state}>
+      {({ todaySteps, team }) => {
+        const myTeam =
+          team.kind === 'mission' && team.myTeam !== null
+            ? team.teams.find((t) => t.team === team.myTeam)
+            : undefined
 
-      <form onSubmit={submit} className="stack">
-        <label className="ho-field">
-          <span className="ho-field__label">今日の歩数（その日の合計）</span>
-          <input
-            className="ho-field__input"
-            inputMode="numeric"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="例: 8432"
-          />
-        </label>
-        <button type="submit" className="ho-btn ho-btn--primary">
-          記録する
-        </button>
-      </form>
-      {message && (
-        <p role="status" className="fs-body">
-          {message}
-        </p>
-      )}
+        return (
+          <section aria-labelledby="today-title" className="page">
+            <h2 id="today-title" className="fs-title">
+              今日の歩み
+            </h2>
+            <p className="fs-caption">{formatDate(today)}</p>
+            <Daiji steps={todaySteps} label="今日の歩数" />
 
-      {team.kind === 'mission' && myTeam && (
-        <div className={`ho-tanzaku ho-tanzaku--team ho-tanzaku--mine ho-team--${myTeam.team}`}>
-          <span className="ho-tanzaku__band" aria-hidden="true" />
-          <span className="ho-teamname">
-            <TeamMark team={myTeam.team} mine />
-            {myTeam.name}
-          </span>
-          <div className="ho-tanzaku__sub">目指すは {team.plan.destination.name}</div>
-          {team.myTopTwoToday && <div className="ho-tanzaku__top">今日の上位に入っています</div>}
-        </div>
-      )}
-    </section>
+            <form onSubmit={submit} className="stack">
+              <label className="ho-field">
+                <span className="ho-field__label">今日の歩数（その日の合計）</span>
+                <input
+                  className="ho-field__input"
+                  inputMode="numeric"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="例: 8432"
+                />
+              </label>
+              <button type="submit" className="ho-btn ho-btn--primary">
+                記録する
+              </button>
+            </form>
+            {message && (
+              <p role="status" className="fs-body">
+                {message}
+              </p>
+            )}
+
+            {team.kind === 'mission' && myTeam && (
+              <div
+                className={`ho-tanzaku ho-tanzaku--team ho-tanzaku--mine ho-team--${myTeam.team}`}
+              >
+                <span className="ho-tanzaku__band" aria-hidden="true" />
+                <span className="ho-teamname">
+                  <TeamMark team={myTeam.team} mine />
+                  {myTeam.name}
+                </span>
+                <div className="ho-tanzaku__sub">目指すは {team.plan.destination.name}</div>
+                {team.myTopTwoToday && (
+                  <div className="ho-tanzaku__top">今日の上位に入っています</div>
+                )}
+              </div>
+            )}
+          </section>
+        )
+      }}
+    </AsyncView>
   )
 }

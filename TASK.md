@@ -96,7 +96,6 @@
 目的: PoC（localStorage）から、ARCHITECTURE.md 2章で【採用】済みの Supabase（PostgreSQL）につなぎ替える。先に設計判断が要る論点を固め（ARCHITECTURE.md「5. 実装固有の設計」に反映）、固まったものから実装する。
 
 #### 実装（設計判断が固まってから着手）
-- [ ] 非同期化にともなうUIの対応（読み込み中・エラー表示）を各画面に加える
 - [ ] `Supabase*Repository` の結合テスト（`*.integration.test.ts`、ローカルSupabase CLIに実際に接続してCRUD・RLS・条件付きUPSERTを検証）を書き、`npm run test:integration` のような別コマンドに分離する（ARCHITECTURE.md「5. 実装固有の設計」テストの方針）
 - [ ] CI（`.github/workflows/ci.yml`）に、Supabase CLIをセットアップしてローカルPostgresを起動し、`supabase db reset`（migrationsの適用確認）と上記の結合テストを実行するジョブを追加する（ARCHITECTURE.md「マイグレーション管理」「テストの方針」）
 - [ ] E2E（Playwright）をローカルSupabase CLIに接続して実行するように変える（ARCHITECTURE.md「テストの方針」）
@@ -237,3 +236,4 @@
 - [x] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加し、`composition.ts` で `supabase` オプションの有無により localStorage 実装と切り替えられるようにした → `@supabase/supabase-js` を依存に追加。ローカルSupabase CLI（service_role key）に対する簡易スモークテストで、ガード付きUPDATE・CHECK制約・楽観的ロックが期待通り動くことを確認済み（正式な結合テストは別タスク）
 - [x] `members.id` ＝ `auth.users.id` の前提で、招待・初回ログイン時にメンバーの行を作る仕組みを実装した → `MemberService.registerWithId(id, displayName)`・`app.registerMemberWithId()` を追加。`src/ui/AuthGate.tsx`（新規）が、ログイン後に `members.find()` で行の有無を確認し、なければ表示名の入力フォーム（初回ログインの本人入力。ARCHITECTURE.md 4.4の見込みどおり）を出して `registerMemberWithId` を呼ぶ。ローカルSupabase CLI＋Mailpitでマジックリンクのログイン〜本人のみ自分の行を作れること（RLS）〜他人のIDでは拒否されることを実際に確認済み
 - [x] 開発用画面の「メンバーの切り替え」を本番の認証フローに置き換えた → `main.tsx` が `VITE_SUPABASE_URL` の有無で分岐（あれば `AuthGate`＋Supabase、なければ従来のPoC/開発用画面）。`App.tsx` に `auth` プロップ（本番用。メンバー切り替えのかわりに認証済みのmemberIdとログアウトを渡す）を追加し、`auth` があるときは `DevPanel`（メンバー切り替え・時計操作・ダミーデータ）を出さず、表示の設定だけ直接出す。開発中に作っていた本物のSupabaseを指す `.env.local` は、既定の `npm run dev`/E2Eが誤って認証フローに入らないよう削除した（本番はCloudflare Pagesの環境変数で設定する。ARCHITECTURE.md「接続情報の管理」のとおり）
+- [x] 非同期化にともなうUIの対応（読み込み中・エラー表示）を各画面に加えた → `useAsyncData` を `AsyncState<T>`（`loading`/`error`/`ready` を区別する型）を返す形に変え、共通の表示を `src/ui/AsyncView.tsx`（新規）に切り出した。`TodayPage`・`RecordPage`・`JourneyPage`・`TeamPage`・`RankingPage` を `AsyncView` 経由の描画に変更（読み込み中は「読み込み中…」、失敗時は `role="alert"` のメッセージを出す）。`JourneyPage` では「読み込み中」と「個人ミッションがまだない（`null`）」を区別できるようになった（従来は両方 `null` 判定で区別できていなかった）。`AsyncView.test.tsx` を追加。format・lint・tsc・テスト（177件）・E2Eがすべて通ることを確認済み

@@ -2,6 +2,7 @@ import type { LeaderboardEntry } from '../../stepRecord/application/StepRecordSe
 import { localDateOf } from '../../shared/LocalDate.ts'
 import { Steps } from '../design-system/components.tsx'
 import { formatDate } from '../format.ts'
+import { AsyncView } from '../AsyncView.tsx'
 import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
 
@@ -14,41 +15,43 @@ const RANK_LABELS = ['', '壱位', '弍位', '参位', '四位', '五位']
  */
 export function RankingPage({ app, memberId, version }: PageProps) {
   const today = localDateOf(app.clock.now())
-  const data = useAsyncData(async () => {
+  const state = useAsyncData(async () => {
     const members = await app.members.members()
     const board = await app.steps.leaderboard(members, today)
     return { names: new Map(members.map((m) => [m.memberId, m.displayName])), board }
   }, [app, today, version])
-  if (!data) return null
-  const { names, board } = data
   return (
-    <section aria-labelledby="ranking-title" className="page">
-      <h2 id="ranking-title" className="fs-title">
-        番付
-      </h2>
-      <p className="fs-caption">{formatDate(today)}・上位5名</p>
-      <RankingChart
-        title="今日の歩数"
-        entries={board.today}
-        names={names}
-        memberId={memberId}
-        empty="まだ今日の歩数を記録した人がいません。"
-      />
-      <RankingChart
-        title="全日数の総歩数"
-        entries={board.total}
-        names={names}
-        memberId={memberId}
-        empty="まだ記録がありません。"
-      />
-      <RankingChart
-        title="平均歩数"
-        entries={board.average}
-        names={names}
-        memberId={memberId}
-        empty="まだ記録がありません。"
-      />
-    </section>
+    <AsyncView state={state}>
+      {({ names, board }) => (
+        <section aria-labelledby="ranking-title" className="page">
+          <h2 id="ranking-title" className="fs-title">
+            番付
+          </h2>
+          <p className="fs-caption">{formatDate(today)}・上位5名</p>
+          <RankingChart
+            title="今日の歩数"
+            entries={board.today}
+            names={names}
+            memberId={memberId}
+            empty="まだ今日の歩数を記録した人がいません。"
+          />
+          <RankingChart
+            title="全日数の総歩数"
+            entries={board.total}
+            names={names}
+            memberId={memberId}
+            empty="まだ記録がありません。"
+          />
+          <RankingChart
+            title="平均歩数"
+            entries={board.average}
+            names={names}
+            memberId={memberId}
+            empty="まだ記録がありません。"
+          />
+        </section>
+      )}
+    </AsyncView>
   )
 }
 

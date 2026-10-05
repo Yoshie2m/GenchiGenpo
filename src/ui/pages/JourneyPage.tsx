@@ -1,6 +1,8 @@
+import type { JourneyView } from '../../personalMission/application/PersonalMissionService.ts'
 import { provinceSceneUrl } from '../design-system/assets.ts'
 import { Daiji, Icon, Pictogram, Steps } from '../design-system/components.tsx'
 import { formatDate, formatDateTime } from '../format.ts'
+import { AsyncView } from '../AsyncView.tsx'
 import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
 
@@ -10,14 +12,23 @@ import type { PageProps } from './types.ts'
  * 通過点に着いても特別な表示は出さない（記録が残るだけ）。
  */
 export function JourneyPage({ app, memberId, version }: PageProps) {
-  const view = useAsyncData(() => app.personal.view(memberId), [app, memberId, version])
-  if (!view) {
-    return (
-      <section className="page">
-        <p>まだ足跡がありません。さあ、参りましょう。</p>
-      </section>
-    )
-  }
+  const state = useAsyncData(() => app.personal.view(memberId), [app, memberId, version])
+  return (
+    <AsyncView state={state}>
+      {(view) =>
+        view === null ? (
+          <section className="page">
+            <p>まだ足跡がありません。さあ、参りましょう。</p>
+          </section>
+        ) : (
+          <Journey view={view} />
+        )
+      }
+    </AsyncView>
+  )
+}
+
+function Journey({ view }: { view: JourneyView }) {
   const scene = provinceSceneUrl(view.current.province)
   const passedCount = view.nearby.filter((n) => n.passed).length
   // 歩いた区間: 直前に着いた通過点まで（現在地は着いた通過点と次の通過点の間）
