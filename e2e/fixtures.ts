@@ -7,7 +7,8 @@ export const NOW = new Date('2026-10-04T12:00:00+09:00')
 export async function open(page: Page, hash = 'today') {
   await page.clock.setFixedTime(NOW)
   await page.goto(`/#${hash}`)
-  await expect(page.getByRole('heading', { level: 1, name: '現地現歩' })).toBeVisible()
+  // 見出し（現地現歩）は画面に出さない（スクリーンリーダー用のH1のみ）ため、下部タブで読み込みを待つ
+  await expect(page.getByRole('navigation', { name: '主要' })).toBeVisible()
 }
 
 export function tab(page: Page, name: string) {
