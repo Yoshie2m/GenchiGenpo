@@ -8,10 +8,16 @@ import { UiContext } from './design-system/uiContext.ts'
 import { JourneyPage } from './pages/JourneyPage.tsx'
 import { RankingPage } from './pages/RankingPage.tsx'
 import { RecordPage } from './pages/RecordPage.tsx'
-import { SettingsPage } from './pages/SettingsPage.tsx'
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
-import { applyTheme, isNight, loadSettings, saveSettings, type Settings } from './settings.ts'
+import {
+  applyTheme,
+  DEFAULT_SETTINGS,
+  isNight,
+  loadSettings,
+  saveSettings,
+  type Settings,
+} from './settings.ts'
 import { useAsyncData } from './useAsyncData.ts'
 
 /** 本番の認証フロー（Supabase）で使う。渡したときは、開発用のメンバー切り替えのかわりにこれを使う。 */
@@ -55,7 +61,10 @@ function tabFromHash(): TabId {
 export default function App({ app, auth }: { app: AppServices; auth?: AuthSession }) {
   const [tab, setTabState] = useState<TabId>(tabFromHash)
   const [memberId, setMemberId] = useState<MemberId | null>(auth?.memberId ?? null)
-  const [settings, setSettings] = useState<Settings>(loadSettings)
+  // 本番の認証フローでは表示の設定の画面を出さず、初期値（昼、算用数字を併記）に固定する。
+  const [settings, setSettings] = useState<Settings>(() =>
+    auth ? DEFAULT_SETTINGS : loadSettings(),
+  )
   const [version, setVersion] = useState(0)
   const refresh = () => setVersion((v) => v + 1)
   const night = isNight(settings.theme)
@@ -136,9 +145,7 @@ export default function App({ app, auth }: { app: AppServices; auth?: AuthSessio
           </div>
           <p className="app__concept">{CONCEPT}</p>
         </header>
-        {auth ? (
-          <SettingsPage settings={settings} onChange={changeSettings} />
-        ) : (
+        {!auth && (
           <DevPanel
             app={app}
             memberId={memberId}
