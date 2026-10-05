@@ -26,19 +26,53 @@ describe('achievementDaysOf（達成日数）', () => {
 })
 
 describe('specialMission（特命）', () => {
-  test('全員の平均と、達成日数が多い上位3名の平均を出す', () => {
-    // 5人: 10, 8, 6, 4, 2 日
-    const result = specialMission([10, 8, 6, 4, 2])
-    expect(result).toEqual({ allAverage: 6, top3Average: 8 }) // (10+8+6)/3 = 8
+  const member = (id: string, name: string, days: number) => ({
+    memberId: memberId(id),
+    displayName: name,
+    achievementDays: days,
   })
 
-  test('同率の人がいれば、上位3位までの全員を平均に含める(番付と同じ考え方)', () => {
-    // 1位8日、2位も8日(同率1位)、3位5日 → 上位3位までに3人入る
-    const result = specialMission([8, 8, 5, 1])
-    expect(result!.top3Average).toBeCloseTo((8 + 8 + 5) / 3)
+  test('全員分の達成率（%）を出す。全員が全日数で達成すれば100', () => {
+    const result = specialMission([member('a', 'A', 5), member('b', 'B', 5)], 5)
+    expect(result!.overallRate).toBe(100)
+  })
+
+  test('達成率は全員分の達成日数の合計 ÷（人数×対象日数）', () => {
+    // 2人、対象10日: Aは10日中8日、Bは10日中2日 → 合計10日 ÷ 20日 = 50%
+    const result = specialMission([member('a', 'A', 8), member('b', 'B', 2)], 10)
+    expect(result!.overallRate).toBe(50)
+  })
+
+  test('四捨五入する', () => {
+    // 3人、対象10日、合計16日 → 16/30 = 53.33...% → 53%
+    const result = specialMission(
+      [member('a', 'A', 6), member('b', 'B', 5), member('c', 'C', 5)],
+      10,
+    )
+    expect(result!.overallRate).toBe(53)
+  })
+
+  test('全日数で達成した人だけを極上（パーフェクト）に含める', () => {
+    const result = specialMission(
+      [member('a', 'A', 10), member('b', 'B', 9), member('c', 'C', 10)],
+      10,
+    )
+    expect(result!.perfectMembers).toEqual([
+      { memberId: memberId('a'), displayName: 'A', achievementDays: 10 },
+      { memberId: memberId('c'), displayName: 'C', achievementDays: 10 },
+    ])
+  })
+
+  test('パーフェクトの人がいなければ空配列', () => {
+    const result = specialMission([member('a', 'A', 9)], 10)
+    expect(result!.perfectMembers).toEqual([])
   })
 
   test('メンバーが1人もいなければ null', () => {
-    expect(specialMission([])).toBeNull()
+    expect(specialMission([], 10)).toBeNull()
+  })
+
+  test('対象日数が0以下なら null', () => {
+    expect(specialMission([member('a', 'A', 0)], 0)).toBeNull()
   })
 })

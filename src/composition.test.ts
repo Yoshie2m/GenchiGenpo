@@ -142,8 +142,8 @@ describe('チームミッションの流れ', () => {
   })
 })
 
-describe('特命: 参加メンバー全員の達成日数の平均と、上位3名の平均', () => {
-  test('10月1日〜昨日（今日は除く）の達成日数で、全員平均と上位3名平均を出す', async () => {
+describe('特命: 参加メンバー全員分の達成率と、極上（パーフェクト）の一覧', () => {
+  test('10月1日〜昨日（今日は除く）の達成日数から、全員分の達成率と極上の一覧を出す', async () => {
     localStorage.clear()
     const app = createApp({
       storage: localStorage,
@@ -171,6 +171,11 @@ describe('特命: 参加メンバー全員の達成日数の平均と、上位3�
     const members = await app.members.members()
     const result = await app.steps.specialMission(members, today)
 
-    expect(result).toEqual({ allAverage: 1.5, top3Average: 2 })
+    // 合計達成日数 3+1+0+2=6、4人×3日間=12 → 50%。全日数(3日)で達成したのは A だけ
+    expect(result).toEqual({
+      overallRate: 50,
+      totalDays: 3,
+      perfectMembers: [{ memberId: a.id, displayName: 'A', achievementDays: 3 }],
+    })
   })
 })

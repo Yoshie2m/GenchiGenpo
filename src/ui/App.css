@@ -71,7 +71,8 @@ body {
   margin: var(--ma-2) 0 0;
 }
 .record-list,
-.candidate-list {
+.candidate-list,
+.special-mission__perfect-list {
   list-style: none;
   margin: 0;
   padding: 0;

@@ -2,7 +2,7 @@ import type { MemberId } from '../../publishedLanguage/memberId.ts'
 import type { MemberSummary, StepHistory } from '../../publishedLanguage/queries.ts'
 import type { StepsRecorded } from '../../publishedLanguage/stepRecordEvents.ts'
 import type { Clock } from '../../shared/Clock.ts'
-import { addDays, type LocalDate } from '../../shared/LocalDate.ts'
+import { addDays, daysBetween, type LocalDate } from '../../shared/LocalDate.ts'
 import {
   DailySteps,
   RECORDING_START_DATE,
@@ -164,25 +164,30 @@ export class StepRecordService implements StepHistory {
   }
 
   /**
-   * 特命: 参加メンバー全員の達成日数（1日8000歩以上を記録した日の数）の平均値と、
-   * 達成日数が多い上位3名の平均値（DOMAINS.md「特命」）。対象期間は2026年10月1日から昨日まで
-   * （今日は途中の歩数なので数えない。番付の平均歩数と同じ考え方）。
+   * 特命: 参加メンバー全員分の達成率（1日8000歩以上を記録した日数の割合）と、
+   * 極上（パーフェクト、対象期間のすべての日で達成した人）の一覧（DOMAINS.md「特命」）。
+   * 対象期間は2026年10月1日から昨日まで（今日は途中の歩数なので数えない。番付の平均歩数と同じ考え方）。
    */
   async specialMission(
     members: readonly MemberSummary[],
     today: LocalDate,
   ): Promise<SpecialMission | null> {
     const until = addDays(today, -1)
-    const counts = await Promise.all(
+    const totalDays = daysBetween(RECORDING_START_DATE, until) + 1
+    const withAchievementDays = await Promise.all(
       members.map(async (m) => {
         const records = await this.repository.findByMember(m.memberId, {
           from: RECORDING_START_DATE,
           until,
         })
-        return achievementDaysOf(records, RECORDING_START_DATE, until)
+        return {
+          memberId: m.memberId,
+          displayName: m.displayName,
+          achievementDays: achievementDaysOf(records, RECORDING_START_DATE, until),
+        }
       }),
     )
-    return specialMission(counts)
+    return specialMission(withAchievementDays, totalDays)
   }
 
   private async change(

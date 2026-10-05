@@ -1,4 +1,4 @@
-import { competitionRanks } from '../../shared/ranking.ts'
+import type { MemberId } from '../../publishedLanguage/memberId.ts'
 import type { LocalDate } from '../../shared/LocalDate.ts'
 import type { DailySteps } from './DailySteps.ts'
 
@@ -16,19 +16,46 @@ export function achievementDaysOf(
   ).length
 }
 
-/** 特命（DOMAINS.md）に出す2つの平均値。 */
-export interface SpecialMission {
-  /** 参加メンバー全員の達成日数の平均値。 */
-  readonly allAverage: number
-  /** 達成日数が多い上位3名（同率は全員含む。番付と同じ考え方）の達成日数の平均値。 */
-  readonly top3Average: number
+export interface SpecialMissionMember {
+  readonly memberId: MemberId
+  readonly displayName: string
+  readonly achievementDays: number
 }
 
-/** メンバーごとの達成日数から、特命の2つの平均値を出す。メンバーが1人もいなければ null。 */
-export function specialMission(achievementDaysByMember: readonly number[]): SpecialMission | null {
-  if (achievementDaysByMember.length === 0) return null
-  const average = (values: readonly number[]) => values.reduce((s, v) => s + v, 0) / values.length
-  const ranks = competitionRanks(achievementDaysByMember)
-  const top3 = achievementDaysByMember.filter((_, i) => ranks[i] <= 3)
-  return { allAverage: average(achievementDaysByMember), top3Average: average(top3) }
+/** パーフェクト（対象期間のすべての日で達成）のメンバー。 */
+export interface PerfectMember {
+  readonly memberId: MemberId
+  readonly displayName: string
+  readonly achievementDays: number
+}
+
+/** 特命（DOMAINS.md）に出す内容。 */
+export interface SpecialMission {
+  /** 参加メンバー全員分の達成率（%、0〜100の整数。全員が対象期間すべてで達成すれば100）。 */
+  readonly overallRate: number
+  /** 達成日数の対象日数（全員共通の分母）。 */
+  readonly totalDays: number
+  /** 極上（パーフェクト）: 対象期間のすべての日で達成したメンバー。 */
+  readonly perfectMembers: readonly PerfectMember[]
+}
+
+/**
+ * メンバーごとの達成日数から、特命の内容を出す。
+ * メンバーが1人もいない、または対象日数が0以下のとき（まだ数えられる日がないとき）は null。
+ */
+export function specialMission(
+  members: readonly SpecialMissionMember[],
+  totalDays: number,
+): SpecialMission | null {
+  if (members.length === 0 || totalDays <= 0) return null
+  const totalAchievementDays = members.reduce((sum, m) => sum + m.achievementDays, 0)
+  const overallRate = Math.round((totalAchievementDays / (members.length * totalDays)) * 100)
+  const perfectMembers = members
+    .filter((m) => m.achievementDays >= totalDays)
+    .map((m) => ({
+      memberId: m.memberId,
+      displayName: m.displayName,
+      achievementDays: m.achievementDays,
+    }))
+  return { overallRate, totalDays, perfectMembers }
 }
