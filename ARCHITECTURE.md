@@ -238,8 +238,18 @@ src/
 - 案C（自己サインアップ）は、絶対条件「バックエンドの手前で認証を必須とする」の精神（未知の人の自由登録を許さない）と矛盾するため却下。選んだ案A・Bでは、Supabase Auth の「新規サインアップ許可」はOFFのままにする（管理者の招待だけがアカウント作成の入口になる）。
 - Studio の「Invite user」はメールアドレスのみの入力で、表示名などのメタデータは設定できない。そのため `members` 行の作成（下の「オープンな論点」参照）は、招待時ではなく初回ログイン時に本人が表示名を入力する形になる見込み。
 
-**オープンな論点**（TASK.md に反映）
-- `members.id` ＝ `auth.users.id` の前提で、招待・初回ログイン時に `members` 行をどう作るか（上記の通り、表示名は本人の初回ログイン時の入力になる見込み）
+`members` 行の作成は実装済み（`src/ui/AuthGate.tsx`）: ログイン後に `members` 行の有無を確認し、なければ表示名の入力フォームを出して `MemberService.registerWithId(id, displayName)` で作る。
+
+**Supabase Auth の設定（ダッシュボードでの作業）【採用】**
+
+Studio の「Invite user」を使うには、コードの変更とは別に、Supabase ダッシュボードの Auth 設定を本番のURLに合わせる必要がある。
+
+- **Authentication → URL Configuration → Site URL** を、既定値の `http://localhost:3000` から `https://genchigenpo.pages.dev` に変更する。招待メールのリンクは送信時点のSite URLでリダイレクト先を作るため、ここが古いと「確認」リンクが `localhost:3000` に飛んで失敗する（実際に発生し、設定変更で解消した）。
+- **Redirect URLs** の許可リストにも `https://genchigenpo.pages.dev/**` を追加しておく。
+- Site URL を直した後も、**それより前に送った招待メールのリンクは直らない**（送信時点の値が埋め込まれているため）。該当ユーザーには招待を送り直す。
+
+**まだ対応していない懸念**（TASK.md に追加）
+- 本番の Auth 設定を確認したところ `disable_signup: false`（新規サインアップが許可されたまま）だった。今のログイン画面（マジックリンク）は `shouldCreateUser` を明示的に `false` にしていないため、招待していない人でも自分でメールアドレスを入れれば自分でアカウントを作れてしまう。招待制の決定（案A、案C却下の理由）と矛盾するため、**Authentication 設定で「Allow new users to sign up」をOFFにする**（またはクライアント側で `signInWithOtp` に `shouldCreateUser: false` を渡す）対応が必要。
 
 ## 5. 実装固有の設計
 

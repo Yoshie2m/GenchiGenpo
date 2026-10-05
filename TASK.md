@@ -95,6 +95,7 @@
 目的: PoC（localStorage）から、ARCHITECTURE.md 2章で【採用】済みの Supabase（PostgreSQL）につなぎ替える。先に設計判断が要る論点を固め（ARCHITECTURE.md「5. 実装固有の設計」に反映）、固まったものから実装する。
 
 #### 実装（設計判断が固まってから着手）
+- [ ] Supabase Authで新規サインアップ（自己サインアップ）を禁止する → 本番の設定を確認したところ `disable_signup: false` のままで、招待していない人でも自分でメールアドレスを入れれば自分でアカウントを作れてしまう。招待制の決定と矛盾するため、ダッシュボード（Authentication 設定）で「Allow new users to sign up」をOFFにするか、`AuthGate.tsx` の `signInWithOtp` 呼び出しに `shouldCreateUser: false` を渡す（ARCHITECTURE.md 4.4「まだ対応していない懸念」）
 - [ ] E2E（Playwright）をローカルSupabase CLIに接続して実行するように変える（ARCHITECTURE.md「テストの方針」）。調査済み: 今のE2E（`e2e/fixtures.ts`・`e2e/mission.spec.ts`）は開発用画面（`DevPanel`）の「1日進める」「ほかのメンバーの歩数を入れる」に強く依存しており、本番の認証フロー（`AuthGate`）にはこれらがないため、単純にSupabase接続に向けるだけでは今の3テストが動かなくなる。書き直す場合は (1) マジックリンクのログイン・初回登録の操作を追加 (2) 他メンバーの歩数はDB（service_role）に直接投入 (3) 時計の進行は `DevPanel` の代わりに Playwright 自体の時計制御（`page.clock.fastForward()`）を使う（`systemClock` は `new Date()` を呼ぶだけなので効くはず）、という組み直しが要る。後回しと判断し、今はこのタスクのまま残す
 - [ ] iOSショートカット連携・画面キャプチャ取り込みの送信先をSupabase経由に合わせる（関連: 上の「iOSショートカット連携の送信方法を決める」「Androidのメンバーが...」タスク、ARCHITECTURE.md 4.2・4.3）
 - [ ] Supabaseプロジェクトの自動停止（7日間アクセスがないと停止する）を防ぐ仕組みを用意する（例: GitHub Actionsで1日1回、軽いリクエストを送るスケジュールジョブ）（ARCHITECTURE.md「無料枠の見積り」）
