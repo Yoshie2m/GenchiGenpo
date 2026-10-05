@@ -1,0 +1,14 @@
+{
+  "name": "現地現歩",
+  "short_name": "現地現歩",
+  "description": "画面を見るな、現場へ走れ。足で稼ぐビジネスパーソンのための、現地現物ライフログ。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EEF2F3",
+  "theme_color": "#EEF2F3",
+  "lang": "ja",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
