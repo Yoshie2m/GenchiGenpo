@@ -112,7 +112,18 @@ export function createApp(options: AppOptions = {}) {
 
   /** メンバーを登録し、個人ミッションの旅を始める（チームミッションには次の tick で途中参加する）。 */
   async function registerMember(displayName: string) {
-    const member = await members.register(displayName)
+    return afterRegister(await members.register(displayName))
+  }
+
+  /**
+   * IDを指定して登録する（本番の認証フローの初回ログイン用。関連: ARCHITECTURE.md 4.4
+   * 「招待制の運用」）。
+   */
+  async function registerMemberWithId(id: string, displayName: string) {
+    return afterRegister(await members.registerWithId(id, displayName))
+  }
+
+  async function afterRegister(member: Awaited<ReturnType<typeof members.register>>) {
     await personal.ensureStarted(member.id, member.registeredDate)
     await team.tick()
     return member
@@ -170,7 +181,18 @@ export function createApp(options: AppOptions = {}) {
     },
   }
 
-  return { clock, members, steps, screenCapture, personal, candidates, team, registerMember, dev }
+  return {
+    clock,
+    members,
+    steps,
+    screenCapture,
+    personal,
+    candidates,
+    team,
+    registerMember,
+    registerMemberWithId,
+    dev,
+  }
 }
 
 export type App = ReturnType<typeof createApp>

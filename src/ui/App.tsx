@@ -8,10 +8,17 @@ import { UiContext } from './design-system/uiContext.ts'
 import { JourneyPage } from './pages/JourneyPage.tsx'
 import { RankingPage } from './pages/RankingPage.tsx'
 import { RecordPage } from './pages/RecordPage.tsx'
+import { SettingsPage } from './pages/SettingsPage.tsx'
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
 import { applyTheme, isNight, loadSettings, saveSettings, type Settings } from './settings.ts'
 import { useAsyncData } from './useAsyncData.ts'
+
+/** 本番の認証フロー（Supabase）で使う。渡したときは、開発用のメンバー切り替えのかわりにこれを使う。 */
+export interface AuthSession {
+  readonly memberId: MemberId
+  readonly onSignOut: () => void
+}
 
 const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
   { id: 'today', label: '今日', icon: 'ho' },
@@ -45,9 +52,9 @@ function tabFromHash(): TabId {
   return TABS.some((t) => t.id === id) ? (id as TabId) : 'today'
 }
 
-export default function App({ app }: { app: AppServices }) {
+export default function App({ app, auth }: { app: AppServices; auth?: AuthSession }) {
   const [tab, setTabState] = useState<TabId>(tabFromHash)
-  const [memberId, setMemberId] = useState<MemberId | null>(null)
+  const [memberId, setMemberId] = useState<MemberId | null>(auth?.memberId ?? null)
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [version, setVersion] = useState(0)
   const refresh = () => setVersion((v) => v + 1)
@@ -55,8 +62,9 @@ export default function App({ app }: { app: AppServices }) {
 
   useEffect(() => applyTheme(night), [night])
 
-  // 初回だけ、最初に表示するメンバーを非同期に決める。
+  // 本番の認証フローのときは auth.memberId を使うので、開発用の決め方はしない。
   useEffect(() => {
+    if (auth) return
     let active = true
     initialMember(app).then((id) => {
       if (active) setMemberId(id)
@@ -113,19 +121,33 @@ export default function App({ app }: { app: AppServices }) {
           <img src={logoUrl(night)} alt="歩" className="app__logo" />
           <div>
             <h1 className="app__title">現地現歩</h1>
-            <p className="fs-caption">{me?.displayName}さん</p>
+            <p className="fs-caption">
+              {me?.displayName}さん
+              {auth && (
+                <>
+                  {' '}
+                  <button type="button" className="ho-btn ho-btn--text" onClick={auth.onSignOut}>
+                    ログアウト
+                  </button>
+                </>
+              )}
+            </p>
           </div>
           <p className="app__concept">{CONCEPT}</p>
         </header>
-        <DevPanel
-          app={app}
-          memberId={memberId}
-          onMemberChange={changeMember}
-          refresh={refresh}
-          version={version}
-          settings={settings}
-          onSettingsChange={changeSettings}
-        />
+        {auth ? (
+          <SettingsPage settings={settings} onChange={changeSettings} />
+        ) : (
+          <DevPanel
+            app={app}
+            memberId={memberId}
+            onMemberChange={changeMember}
+            refresh={refresh}
+            version={version}
+            settings={settings}
+            onSettingsChange={changeSettings}
+          />
+        )}
         <main className="app__main">
           {tab === 'today' && <TodayPage {...props} />}
           {tab === 'record' && <RecordPage {...props} />}

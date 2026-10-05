@@ -20,7 +20,15 @@ export class MemberService implements MemberDirectory {
 
   /** 登録する。登録日は今日（日本時間）。 */
   async register(displayName: string): Promise<Member> {
-    const member = Member.register(this.ids.next(), displayName, localDateOf(this.clock.now()))
+    return this.registerWithId(this.ids.next(), displayName)
+  }
+
+  /**
+   * IDを指定して登録する（本番の認証フロー用。`members.id` ＝ Supabase Auth の
+   * `auth.users.id` とする前提のため、ランダムなIDではなく認証済みユーザーのIDを使う）。
+   */
+  async registerWithId(id: string, displayName: string): Promise<Member> {
+    const member = Member.register(id, displayName, localDateOf(this.clock.now()))
     await this.repository.add(member)
     return member
   }

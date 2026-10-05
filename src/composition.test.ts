@@ -70,6 +70,17 @@ describe('チームミッションの流れ', () => {
     expect(view.teams.map((t) => t.memberCount)).toEqual([6, 5])
   })
 
+  test('registerMemberWithId は、指定したIDで登録し個人ミッションを始める（本番の認証フロー用）', async () => {
+    const app = await setup()
+    const member = await app.registerMemberWithId('auth-user-1', '認証太郎')
+    expect(member.id).toBe('auth-user-1')
+    expect(await app.members.find(memberId('auth-user-1'))).toMatchObject({
+      memberId: 'auth-user-1',
+      displayName: '認証太郎',
+    })
+    expect(await app.personal.view(memberId('auth-user-1'))).not.toBeNull()
+  })
+
   test('記録した歩数で進行歩数が増え、今日の上位2名に入ったかがわかる', async () => {
     const app = await setup()
     await app.team.createMission(d01, 'hamaki')
