@@ -97,12 +97,11 @@
 
 #### 設計判断（対話で決める）
 - [ ] コンテキスト単位の「まとめて読み込み・まとめて保存」の設計を見直す（Repository 非同期化の案3のステップ2）。全件ロード・全件保存はDBでは無料枠（パケ死対策）と相性が悪いため、メンバー別・日別などの単位に分ける（関連: ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース）
-- [ ] 歩数の「日次合計の上書き（今より小さい値は受け付けない）」ルールをDB側でどう保証するか決める（アプリ側のみで守るか、DB制約・トリガーを使うか）。`onStepsRecorded()` の競合対策（楽観的ロック）とあわせて検討する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
-- [ ] 招待制の運用を決める（誰が・いつメンバーのメールアドレスを登録するか。Supabase の `inviteUserByEmail` を使うか、サインアップ用リンクを配るか）（ARCHITECTURE.md 4.4）
 
 #### 実装（設計判断が固まってから着手）
 - [ ] `members.id` ＝ Supabase Auth の `auth.users.id` とする前提で、招待・初回ログイン時にメンバーの行を作る仕組みを決めて実装する（関連: 招待制の運用を決めるタスク）
 - [ ] `TeamMissionRepository` の保存に版番号（`version`）を持たせ、競合時は保存を失敗させて呼び出し側が読み直して再試行する仕組み（楽観的ロック）を実装する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
+- [ ] `DailyStepsRepository` の Supabase 実装で、記録経路（`record()`/`update()`）はガード付きUPSERT（`where daily_steps.steps <= excluded.steps`）、修正経路（`correct()`）はガードなしUPSERTを使うよう分ける。影響行数が0のとき（他の書き込みに負けたとき）の扱い（エラーにするか、読み直して再試行するか）を実装時に決める（ARCHITECTURE.md「5. 実装固有の設計」Application Service「`daily_steps` の日次上書きルール」）
 - [ ] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加する
 - [ ] `composition.ts` で localStorage 実装と Supabase 実装を切り替えられるようにする
 - [ ] 開発用画面の「メンバーの切り替え（ログインなし）」を、本番の認証フローに置き換える
@@ -238,3 +237,5 @@
 - [x] Supabaseプロジェクトを作成し、APIキー・接続情報の管理方法を決める → 作成済み（`btkmlbhotcuqssbpzjdj`）。ローカルはDocker（`supabase start`）、本番はこのプロジェクト専用。環境変数は `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`、ローカルは`.env.local`（gitignore対象）、本番はCloudflare PagesのEnvironment variablesに設定し、CIには追加のsecretsは不要（ARCHITECTURE.md「接続情報の管理」に反映。`.env.example` を追加）
 - [x] ARCHITECTURE.md「データ永続化（DB）設計」のテーブル定義とRLSポリシーを、`supabase/migrations/` に最初のmigrationとして作成する → `supabase/migrations/20261005002241_initial_schema.sql`。`members`・`daily_steps`・`personal_missions`系・`candidate_order`・`team_mission_state` の7テーブルとRLSポリシーを作成し、`supabase db reset`（ローカルDocker）で適用できることを確認した
 - [x] Repository インターフェースの非同期化ステップ1を実装 → 5つの `domain/*Repository.ts` の `load()`/`save()` を `Promise` を返す形に変え、`LocalStorage*Repository.ts`・6つの `application/*Service.ts`・`publishedLanguage/queries.ts`・`shared/EventBus.ts`（ハンドラの `async` 対応）・`composition.ts`・UI層（`useAsyncData` フックを新設し、各画面・`DevPanel`・`App.tsx` を非同期読み込みに変更）・テスト（`composition.test.ts`・`App.test.tsx` 等）を対応させた。読み書きの単位（コンテキスト全件）は変えていない（ステップ2で対応）。format・lint・tsc・テスト（167件）・E2Eがすべて通ることを確認済み
+- [x] 招待制の運用を決める → 案A（Supabase Studio の「Invite user」。追加実装なし）。運営者がミッション開始前に参加予定全員を一括登録、途中参加者は個別追加。Studioの招待は表示名を設定できないため、`members` 行の表示名は初回ログイン時に本人が入力する見込み（ARCHITECTURE.md 4.4「招待制の運用」に反映）
+- [x] 歩数の「日次合計の上書き」ルールをDB側でどう保証するか決める → 案B（条件付きUPSERT）。記録経路の保存は `on conflict ... do update ... where daily_steps.steps <= excluded.steps` とし、今の値より小さいときはDBが更新を取り消す。誤入力の修正（`correct()`）はこのWHEREを外した別クエリを使う。トリガー（案C）は記録と修正を区別する仕組みが別途必要でドメインルールの二重実装になるため見送った（ARCHITECTURE.md「5. 実装固有の設計」Application Service「`daily_steps` の日次上書きルール」に反映）
