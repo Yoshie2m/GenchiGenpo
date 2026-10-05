@@ -35,6 +35,9 @@ const WEEKDAYS = [
 /** マスの左端からこの割合までに始まる数字を「日付」とみなす(歩数は右寄せで表示される)。 */
 const DAY_NUMBER_LEFT_RATIO = 0.2
 
+/** 同じ行(週)とみなす、日付の数字どうしの縦位置の差の上限(px)。カレンダーの行の高さよりかなり小さい値。 */
+const ROW_Y_TOLERANCE = 30
+
 /**
  * 歩数画面のキャプチャから読み取った語を、カレンダー(年月・日付・歩数)として解釈する。
  *
@@ -77,12 +80,40 @@ export function parseStepCalendar(words: readonly OcrWord[]): StepCalendarResult
     days.set(cell.day, { day: cell.day, steps: null })
   }
 
+  // 同じ行(週)の中で読み取れなかった日付の数字は、ほかの列の日付から推測して補う
+  // (OCRが1マスの日付の数字だけ読み落とすことがあるため。歩数の対応づけにだけ使う)。
+  const rows: (typeof dayCells)[] = []
+  for (const cell of [...dayCells].sort((a, b) => a.word.bbox.y0 - b.word.bbox.y0)) {
+    const row = rows.find((r) => Math.abs(r[0].word.bbox.y0 - cell.word.bbox.y0) < ROW_Y_TOLERANCE)
+    if (row) row.push(cell)
+    else rows.push([cell])
+  }
+  const allDayCells = [...dayCells]
+  for (const row of rows) {
+    const anchor = row[0]
+    const columnsPresent = new Set(row.map((c) => c.column))
+    for (let column = 0; column < 7; column++) {
+      if (columnsPresent.has(column)) continue
+      const inferredDay = anchor.day + (column - anchor.column)
+      if (inferredDay < 1 || inferredDay > lastDay || days.has(inferredDay)) continue
+      days.set(inferredDay, { day: inferredDay, steps: null })
+      allDayCells.push({ day: inferredDay, column, word: anchor.word })
+    }
+  }
+
   for (const step of stepCells) {
-    const owner = dayCells
+    const owner = allDayCells
       .filter((c) => c.column === step.column && c.word.bbox.y1 <= step.word.bbox.y0)
       .sort((a, b) => b.word.bbox.y1 - a.word.bbox.y1)[0]
     const day = owner && days.get(owner.day)
-    if (!day) continue
+    if (!day) {
+      // 歩数は読み取れたが、対応する日付のマスの数字が読み取れなかった（OCRの読み落とし）。
+      // 黙って捨てると歩数が消えたことに気づけないため、確認画面で分かるように知らせる。
+      warnings.push(
+        `歩数 ${step.steps.toLocaleString('ja-JP')} に対応する日付が読み取れませんでした。手入力で確認してください`,
+      )
+      continue
+    }
     day.steps = step.steps
   }
 

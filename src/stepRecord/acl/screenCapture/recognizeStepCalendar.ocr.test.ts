@@ -29,4 +29,23 @@ describe('recognizeStepCalendar(サンプル画像)', () => {
       { date: '2026-09-19', steps: 10 },
     ])
   })
+
+  it(
+    '2026年10月の歩数を読み取る(1マスの日付をOCRが読み落とす実例)',
+    { timeout: 120_000 },
+    async () => {
+      const result = await recognizeStepCalendar(
+        'tests/fixtures/step-calendar-sample-missing-day.png',
+        { cachePath: 'node_modules/.cache/tesseract' },
+      )
+      if (!result.ok) throw new Error(result.error)
+      expect(result.calendar).toMatchObject({ year: 2026, month: 10, warnings: [] })
+      expect(toStepReadings(result.calendar)).toEqual([
+        { date: '2026-10-01', steps: 13_038 },
+        { date: '2026-10-02', steps: 14_420 },
+        { date: '2026-10-03', steps: 12_112 },
+        { date: '2026-10-04', steps: 8_266 },
+      ])
+    },
+  )
 })

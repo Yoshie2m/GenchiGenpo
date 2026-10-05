@@ -17,32 +17,31 @@ body {
 }
 .app__header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ma-2) var(--ma-3);
-}
-/* コンセプト文はロゴとアプリ名の下に、幅いっぱいで出す */
-.app__concept {
-  flex-basis: 100%;
-  margin: 0;
-  padding-top: var(--ma-2);
-  border-top: var(--line-hair) solid var(--ai-light);
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--ai-strong);
+  align-items: flex-start;
+  gap: var(--ma-3);
+  padding-bottom: var(--ma-2);
+  border-bottom: var(--line-hair) solid var(--ai-light);
 }
 .app__logo {
-  height: 56px;
+  height: 84px; /* ロゴの基準サイズ（56px）の1.5倍 */
   width: auto;
+  flex-shrink: 0;
 }
-.app__title {
+/* コンセプト文はロゴの横、2行で収める */
+.app__concept {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 20px;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--ai-strong);
+}
+/* ログイン名・ログアウトは右上に寄せる */
+.app__account {
+  flex-shrink: 0;
+  text-align: right;
 }
 .app__tabs {
   position: fixed;
@@ -71,7 +70,8 @@ body {
   margin: var(--ma-2) 0 0;
 }
 .record-list,
-.candidate-list {
+.candidate-list,
+.special-mission__perfect-list {
   list-style: none;
   margin: 0;
   padding: 0;
