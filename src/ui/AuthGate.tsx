@@ -35,8 +35,9 @@ export function AuthGate({ client, app }: { client: SupabaseClient; app: AppServ
     }
   }, [app, session, refreshToken])
 
-  if (session === 'loading' || lookup === 'loading') return null
+  if (session === 'loading') return null
   if (session === null) return <SignInForm client={client} />
+  if (lookup === 'loading') return null
   if (lookup === 'notFound') {
     return (
       <Onboarding
