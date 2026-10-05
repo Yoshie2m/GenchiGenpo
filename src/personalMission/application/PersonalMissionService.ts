@@ -33,27 +33,20 @@ export class PersonalMissionService {
 
   /** まだ旅立っていなければ旅立たせる（登録日から）。 */
   async ensureStarted(memberId: MemberId, registeredDate: LocalDate): Promise<void> {
-    const all = await this.repository.load()
-    if (all.some((m) => m.memberId === memberId)) return
-    await this.repository.save([
-      ...all,
-      PersonalMission.begin(memberId, this.route, registeredDate),
-    ])
+    if (await this.repository.findByMember(memberId)) return
+    await this.repository.save(PersonalMission.begin(memberId, this.route, registeredDate))
   }
 
   async onStepsRecorded(event: StepsRecorded): Promise<void> {
-    const all = await this.repository.load()
-    let mission = all.find((m) => m.memberId === event.memberId)
-    if (!mission) {
-      mission = PersonalMission.begin(event.memberId, this.route, event.date)
-      all.push(mission)
-    }
+    const mission =
+      (await this.repository.findByMember(event.memberId)) ??
+      PersonalMission.begin(event.memberId, this.route, event.date)
     mission.recordSteps(event)
-    await this.repository.save(all)
+    await this.repository.save(mission)
   }
 
   async view(memberId: MemberId): Promise<JourneyView | null> {
-    const mission = (await this.repository.load()).find((m) => m.memberId === memberId)
+    const mission = await this.repository.findByMember(memberId)
     if (!mission) return null
     const cps = this.route.checkpoints
     const currentIndex = cps.indexOf(mission.currentCheckpoint)

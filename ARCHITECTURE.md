@@ -408,6 +408,8 @@ Supabase のプロジェクト（`btkmlbhotcuqssbpzjdj`）を作成した。ロ�
 - `DailyStepsRepository`（Repository インターフェースの見直しの対象）の実装（Supabase版）で、記録経路の保存はガード付きUPSERT、修正経路の保存はガードなしUPSERTを使う。呼び出し元（`StepRecordService`）は `DailySteps.update()` と `correct()` のどちらを呼んだかに応じて、Repositoryのどちらの保存メソッドを呼ぶかを決める。
 - `insert ... on conflict ... do update ... where` は影響行数が0でも例外にならないため、呼び出し側は「保存できたか」を確認する必要がある場合、影響行数を見るか、保存後に読み直す。今の規模（同じ日付への同時書き込みは稀）では、保存が無視された場合に呼び出し側へエラーを返す・読み直して再試行する、のどちらにするかは実装時に決める。
 
+**実装方法の補記（`SupabaseDailyStepsRepository`）**: PostgREST（Supabaseのクライアントが使うREST API）の `upsert` は `on conflict ... where` のような条件付きの上書きを表現できない。代わりに、ガード付きの保存は「今の値以下のときだけ更新する」フィルタ付きの `update`（`.eq('member_id', ...).eq('date', ...).lte('steps', 新しい値)`）を使う。影響行数が0のときは、まだ行がなければ挿入し、既にあれば（guardに引っかかった）何もしない。ガードなしの保存（修正経路）はそのまま `upsert` を使う。これはPostgres関数（RPC）を新たに作るわけではなく、REST APIの通常のフィルタだけで、TypeScript側と同じ比較条件を表せている。
+
 ### テストの方針 【採用】（案A: ローカルSupabase CLIに実際に接続して検証）
 
 既存のドメイン・アプリケーションサービスのユニットテスト（`composition.test.ts` 等）は、`LocalStorage*Repository`（jsdomの `localStorage`、Dockerなし）で動いており、変更しない。論点は、新しく作る `Supabase*Repository`（実際のSQL・RLS・条件付きUPSERTを使う実装）をどう検証するかだけ。

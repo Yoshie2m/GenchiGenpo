@@ -21,17 +21,17 @@ export class MemberService implements MemberDirectory {
   /** 登録する。登録日は今日（日本時間）。 */
   async register(displayName: string): Promise<Member> {
     const member = Member.register(this.ids.next(), displayName, localDateOf(this.clock.now()))
-    await this.repository.save([...(await this.repository.load()), member])
+    await this.repository.add(member)
     return member
   }
 
   /** メンバーをまとめて入れ替える（ダミーデータの取り込み用）。 */
   async replaceAll(members: readonly Member[]): Promise<void> {
-    await this.repository.save(members)
+    await this.repository.replaceAll(members)
   }
 
   async members(): Promise<MemberSummary[]> {
-    return (await this.repository.load()).map((m) => ({
+    return (await this.repository.all()).map((m) => ({
       memberId: m.id,
       displayName: m.displayName,
       registeredDate: m.registeredDate,

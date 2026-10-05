@@ -97,15 +97,8 @@
 
 #### 実装（設計判断が固まってから着手）
 - [ ] `members.id` ＝ Supabase Auth の `auth.users.id` とする前提で、招待・初回ログイン時にメンバーの行を作る仕組みを決めて実装する（関連: 招待制の運用を決めるタスク）
-- [ ] `TeamMissionRepository` の保存に版番号（`version`）を持たせ、競合時は保存を失敗させて呼び出し側が読み直して再試行する仕組み（楽観的ロック）を実装する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
-- [ ] `MemberRepository` を `all()`（全件読み取り）／`add(member)`（1件追加）に分ける。`MemberService.register()` を `add()` 呼び出しに変える（ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース「ステップ2の設計」）
-- [ ] `PersonalMissionRepository` を `findByMember(memberId)`／`save(mission)`（1件）に分ける。`PersonalMissionService` の `ensureStarted`/`onStepsRecorded`/`view` を1人分だけ読み書きする形に変える（同上）
-- [ ] `DailyStepsRepository` を `findOne(memberId, date)`／`save(record, guard)`（1件。`guard` で「`daily_steps` の日次上書きルール」の条件付きUPSERTを使うか切り替える）／`findByMember(memberId, range?)`／`findByDate(date)` に分ける。`StepRecordService` の `change`/`recordsOf`/`averageOf`/`leaderboard` を対応する単位の呼び出しに変える。保存の影響行数が0のとき（他の書き込みに負けたとき）の扱い（エラーにするか、読み直して再試行するか）を実装時に決める（同上、Application Service「`daily_steps` の日次上書きルール」）
-- [ ] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加する（`CandidateListRepository`・`TeamMissionRepository` は今のインターフェースのまま、ほかは上記の新しいメソッドで）
-- [ ] `composition.ts` で localStorage 実装と Supabase 実装を切り替えられるようにする
 - [ ] 開発用画面の「メンバーの切り替え（ログインなし）」を、本番の認証フローに置き換える
 - [ ] 非同期化にともなうUIの対応（読み込み中・エラー表示）を各画面に加える
-- [ ] `tick()` の実行方式を実装する（決めた方式に応じて、Edge Function／cron、またはクライアント起動+排他制御）
 - [ ] `Supabase*Repository` の結合テスト（`*.integration.test.ts`、ローカルSupabase CLIに実際に接続してCRUD・RLS・条件付きUPSERTを検証）を書き、`npm run test:integration` のような別コマンドに分離する（ARCHITECTURE.md「5. 実装固有の設計」テストの方針）
 - [ ] CI（`.github/workflows/ci.yml`）に、Supabase CLIをセットアップしてローカルPostgresを起動し、`supabase db reset`（migrationsの適用確認）と上記の結合テストを実行するジョブを追加する（ARCHITECTURE.md「マイグレーション管理」「テストの方針」）
 - [ ] E2E（Playwright）をローカルSupabase CLIに接続して実行するように変える（ARCHITECTURE.md「テストの方針」）
@@ -241,3 +234,6 @@
 - [x] 歩数の「日次合計の上書き」ルールをDB側でどう保証するか決める → 案B（条件付きUPSERT）。記録経路の保存は `on conflict ... do update ... where daily_steps.steps <= excluded.steps` とし、今の値より小さいときはDBが更新を取り消す。誤入力の修正（`correct()`）はこのWHEREを外した別クエリを使う。トリガー（案C）は記録と修正を区別する仕組みが別途必要でドメインルールの二重実装になるため見送った（ARCHITECTURE.md「5. 実装固有の設計」Application Service「`daily_steps` の日次上書きルール」に反映）
 - [x] コンテキスト単位の「まとめて読み込み・まとめて保存」の設計を見直す（Repository 非同期化の案3のステップ2） → 実際にスケールに比例して肥大化するのは `daily_steps` だけ（`team_mission_state` は既に1集約として決定済み、`members`・`candidate_order` は元々小さく一定）と判断し、`MemberRepository` は `all()`/`add(member)`、`PersonalMissionRepository` は `findByMember(memberId)`/`save(mission)`、`DailyStepsRepository` は `findOne`/`save(record, guard)`/`findByMember(memberId, range?)`/`findByDate(date)` に分ける設計にした。`CandidateListRepository`・`TeamMissionRepository` は変更なし。SUMをSQL側の集計クエリに持たせる最適化は、無料枠の実データを見てから検討するとして先送りした（ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース「ステップ2の設計」に反映）
 - [x] テストの方針を決める → 案A（ローカルSupabase CLIに実際に接続して検証）。既存のドメイン・アプリケーションサービスのユニットテストは `LocalStorage*Repository` のまま変更しない。`Supabase*Repository` はRLS・条件付きUPSERTが本物のPostgresでしか検証できないため、`test:ocr`と同じ発想で結合テスト（`*.integration.test.ts`）を別コマンドに分離し、CIでは別ジョブ（Supabase CLIセットアップ＋`supabase db reset`と合わせて実行）にする。E2EもローカルSupabase CLI接続に切り替える（ARCHITECTURE.md「5. 実装固有の設計」テストの方針に反映）
+- [x] `MemberRepository`/`PersonalMissionRepository`/`DailyStepsRepository` をステップ2の設計（`all()`/`add()`、`findByMember()`/`save()`、`findOne`/`save(guard)`/`findByMember(range?)`/`findByDate`）に実装し直した → `MemberService`/`PersonalMissionService`/`StepRecordService` の呼び出しも対応させた。`DailyStepsRepository.save(record, guard)` のガードは `LocalStorageDailyStepsRepository` では読み直して比較、`SupabaseDailyStepsRepository` では「今の値以下のときだけ更新する」フィルタ付きUPDATE（影響0行なら、既存行がなければINSERT、あれば何もしない）で実装した（PostgRESTの`upsert`は`on conflict ... where`を表現できないため。ARCHITECTURE.md「`daily_steps` の日次上書きルール」に実装方法を補記）。テスト追加、format・lint・tsc・テスト（173件）が通ることを確認済み
+- [x] `TeamMissionRepository` に版番号（楽観的ロック）を実装し、`TeamMissionService` の `tick()`/`createMission()`/`onStepsRecorded()` を「読み込み→書き換え→保存、競合時は読み直して再試行」の形（`updateMissions` ヘルパー）に変えた → これで `tick()` の実行方式（案C: クライアント実行＋楽観的ロック）も実装完了（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
+- [x] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加し、`composition.ts` で `supabase` オプションの有無により localStorage 実装と切り替えられるようにした → `@supabase/supabase-js` を依存に追加。ローカルSupabase CLI（service_role key）に対する簡易スモークテストで、ガード付きUPDATE・CHECK制約・楽観的ロックが期待通り動くことを確認済み（正式な結合テストは別タスク）

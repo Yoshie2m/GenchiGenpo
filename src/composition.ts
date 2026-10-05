@@ -1,11 +1,18 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { DEMO_MEMBERS, buildDemoData, demoStepsOf } from './dev/demoData.ts'
+import type { MemberRepository } from './member/domain/MemberRepository.ts'
 import { MemberService } from './member/application/MemberService.ts'
 import { LocalStorageMemberRepository } from './member/infrastructure/LocalStorageMemberRepository.ts'
+import { SupabaseMemberRepository } from './member/infrastructure/SupabaseMemberRepository.ts'
 import { CandidateService } from './missionCandidate/application/CandidateService.ts'
+import type { CandidateListRepository } from './missionCandidate/domain/CandidateListRepository.ts'
 import { LocalStorageCandidateListRepository } from './missionCandidate/infrastructure/LocalStorageCandidateListRepository.ts'
+import { SupabaseCandidateListRepository } from './missionCandidate/infrastructure/SupabaseCandidateListRepository.ts'
 import { MISSION_CANDIDATES } from './missionCandidate/masterData/missionCandidates.ts'
 import { PersonalMissionService } from './personalMission/application/PersonalMissionService.ts'
+import type { PersonalMissionRepository } from './personalMission/domain/PersonalMissionRepository.ts'
 import { LocalStoragePersonalMissionRepository } from './personalMission/infrastructure/LocalStoragePersonalMissionRepository.ts'
+import { SupabasePersonalMissionRepository } from './personalMission/infrastructure/SupabasePersonalMissionRepository.ts'
 import { TOKAIDO_ROUTE } from './personalMission/masterData/tokaidoRoute.ts'
 import type { MemberId } from './publishedLanguage/memberId.ts'
 import type { AppEvent } from './publishedLanguage/queries.ts'
@@ -20,9 +27,13 @@ import {
   type CalendarRecognizer,
 } from './stepRecord/application/ScreenCaptureImportService.ts'
 import { StepRecordService } from './stepRecord/application/StepRecordService.ts'
+import type { DailyStepsRepository } from './stepRecord/domain/DailyStepsRepository.ts'
 import { LocalStorageDailyStepsRepository } from './stepRecord/infrastructure/LocalStorageDailyStepsRepository.ts'
+import { SupabaseDailyStepsRepository } from './stepRecord/infrastructure/SupabaseDailyStepsRepository.ts'
 import { TeamMissionService } from './teamMission/application/TeamMissionService.ts'
+import type { TeamMissionRepository } from './teamMission/domain/TeamMissionRepository.ts'
 import { LocalStorageTeamMissionRepository } from './teamMission/infrastructure/LocalStorageTeamMissionRepository.ts'
+import { SupabaseTeamMissionRepository } from './teamMission/infrastructure/SupabaseTeamMissionRepository.ts'
 
 /** PoC のチーム数（DOMAINS.md は3隊。PoC は一旦2隊）。 */
 export const POC_TEAM_COUNT = 2
@@ -32,6 +43,11 @@ const KEY_PREFIX = 'genchigenpo:'
 
 export interface AppOptions {
   readonly storage?: KeyValueStorage & { readonly length: number; key(i: number): string | null }
+  /**
+   * 渡すと各コンテキストの Repository は Supabase 実装になる（本番）。
+   * 渡さなければ localStorage 実装になる（PoC・開発用）。
+   */
+  readonly supabase?: SupabaseClient
   readonly baseClock?: Clock
   readonly ids?: IdGenerator
   /** 画面キャプチャの文字認識（テストでは差し替える）。 */
@@ -55,25 +71,34 @@ export function createApp(options: AppOptions = {}) {
   const ids = options.ids ?? randomIdGenerator
   const bus = new EventBus<AppEvent>()
 
-  const members = new MemberService(new LocalStorageMemberRepository(storage), clock, ids)
-  const steps = new StepRecordService(new LocalStorageDailyStepsRepository(storage), clock, (e) =>
-    bus.publish(e),
-  )
+  const supabase = options.supabase
+  const memberRepository: MemberRepository = supabase
+    ? new SupabaseMemberRepository(supabase)
+    : new LocalStorageMemberRepository(storage)
+  const dailyStepsRepository: DailyStepsRepository = supabase
+    ? new SupabaseDailyStepsRepository(supabase)
+    : new LocalStorageDailyStepsRepository(storage)
+  const personalMissionRepository: PersonalMissionRepository = supabase
+    ? new SupabasePersonalMissionRepository(supabase, TOKAIDO_ROUTE)
+    : new LocalStoragePersonalMissionRepository(storage, TOKAIDO_ROUTE)
+  const candidateListRepository: CandidateListRepository = supabase
+    ? new SupabaseCandidateListRepository(supabase)
+    : new LocalStorageCandidateListRepository(storage)
+  const teamMissionRepository: TeamMissionRepository = supabase
+    ? new SupabaseTeamMissionRepository(supabase)
+    : new LocalStorageTeamMissionRepository(storage)
+
+  const members = new MemberService(memberRepository, clock, ids)
+  const steps = new StepRecordService(dailyStepsRepository, clock, (e) => bus.publish(e))
   const screenCapture = new ScreenCaptureImportService(
     steps,
     clock,
     options.recognizeCalendar ?? recognizeWithTesseract,
   )
-  const personal = new PersonalMissionService(
-    new LocalStoragePersonalMissionRepository(storage, TOKAIDO_ROUTE),
-    TOKAIDO_ROUTE,
-  )
-  const candidates = new CandidateService(
-    new LocalStorageCandidateListRepository(storage),
-    MISSION_CANDIDATES,
-  )
+  const personal = new PersonalMissionService(personalMissionRepository, TOKAIDO_ROUTE)
+  const candidates = new CandidateService(candidateListRepository, MISSION_CANDIDATES)
   const team = new TeamMissionService({
-    repository: new LocalStorageTeamMissionRepository(storage),
+    repository: teamMissionRepository,
     clock,
     members,
     history: steps,

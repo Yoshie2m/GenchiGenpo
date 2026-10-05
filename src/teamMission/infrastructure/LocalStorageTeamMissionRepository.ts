@@ -26,6 +26,7 @@ interface StoredMission {
 
 interface Stored {
   missions: StoredMission[]
+  version: number
 }
 
 /** チームミッションコンテキストの状態を、localStorage の1つのキーにまとめて保存する。 */
@@ -36,28 +37,35 @@ export class LocalStorageTeamMissionRepository implements TeamMissionRepository 
     this.storage = new VersionedStorage<Stored>(storage, TEAM_MISSION_STORAGE_KEY, VERSION)
   }
 
-  async load(): Promise<TeamMissionState> {
+  async load(): Promise<{ state: TeamMissionState; version: number }> {
+    const stored = this.storage.load()
     return {
-      missions: (this.storage.load()?.missions ?? []).map((m) =>
-        TeamMission.fromSnapshot({
-          id: m.id,
-          plan: m.plan,
-          startDate: parseLocalDate(m.startDate),
-          teams: m.teams.map((t) => ({
-            number: t.number,
-            members: t.members.map(memberId),
-            steps: t.steps.map(([mid, d, s]) => [memberId(mid), parseLocalDate(d), s] as const),
-            waypointArrivals: t.waypointArrivals.map(([i, at]) => [i, new Date(at)] as const),
-          })),
-          finalDay: m.finalDay === null ? null : parseLocalDate(m.finalDay),
-          firstArrivedTeam: m.firstArrivedTeam,
-        }),
-      ),
+      state: {
+        missions: (stored?.missions ?? []).map((m) =>
+          TeamMission.fromSnapshot({
+            id: m.id,
+            plan: m.plan,
+            startDate: parseLocalDate(m.startDate),
+            teams: m.teams.map((t) => ({
+              number: t.number,
+              members: t.members.map(memberId),
+              steps: t.steps.map(([mid, d, s]) => [memberId(mid), parseLocalDate(d), s] as const),
+              waypointArrivals: t.waypointArrivals.map(([i, at]) => [i, new Date(at)] as const),
+            })),
+            finalDay: m.finalDay === null ? null : parseLocalDate(m.finalDay),
+            firstArrivedTeam: m.firstArrivedTeam,
+          }),
+        ),
+      },
+      version: stored?.version ?? 0,
     }
   }
 
-  async save(state: TeamMissionState): Promise<void> {
+  async save(state: TeamMissionState, version: number): Promise<boolean> {
+    const current = this.storage.load()?.version ?? 0
+    if (current !== version) return false
     this.storage.save({
+      version: current + 1,
       missions: state.missions.map((mission) => {
         const s = mission.toSnapshot()
         return {
@@ -75,5 +83,6 @@ export class LocalStorageTeamMissionRepository implements TeamMissionRepository 
         }
       }),
     })
+    return true
   }
 }

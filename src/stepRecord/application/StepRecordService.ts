@@ -3,7 +3,12 @@ import type { MemberSummary, StepHistory } from '../../publishedLanguage/queries
 import type { StepsRecorded } from '../../publishedLanguage/stepRecordEvents.ts'
 import type { Clock } from '../../shared/Clock.ts'
 import { addDays, type LocalDate } from '../../shared/LocalDate.ts'
-import { DailySteps, type DailyStepsChange, type StepSource } from '../domain/DailySteps.ts'
+import {
+  DailySteps,
+  RECORDING_START_DATE,
+  type DailyStepsChange,
+  type StepSource,
+} from '../domain/DailySteps.ts'
 import type { DailyStepsRepository } from '../domain/DailyStepsRepository.ts'
 import { topEntries, type LeaderboardEntry } from '../domain/leaderboard.ts'
 import { personalAverage } from '../domain/personalAverage.ts'
@@ -63,28 +68,34 @@ export class StepRecordService implements StepHistory {
     source: StepSource,
     at: Date,
   ): Promise<RecordResult> {
-    return this.change(memberId, date, (existing) =>
-      existing
-        ? existing.update(steps, source, at)
-        : DailySteps.record(memberId, date, steps, source, at),
+    return this.change(
+      memberId,
+      date,
+      (existing) =>
+        existing
+          ? existing.update(steps, source, at)
+          : DailySteps.record(memberId, date, steps, source, at),
+      true,
     )
   }
 
   /** 誤入力の修正（本人が確認画面で行う。歩数を減らすこともできる）。 */
   async correctSteps(memberId: MemberId, date: LocalDate, steps: number): Promise<RecordResult> {
     const now = this.clock.now()
-    return this.change(memberId, date, (existing) =>
-      existing
-        ? existing.correct(steps, now)
-        : DailySteps.record(memberId, date, steps, 'manual', now),
+    return this.change(
+      memberId,
+      date,
+      (existing) =>
+        existing
+          ? existing.correct(steps, now)
+          : DailySteps.record(memberId, date, steps, 'manual', now),
+      false,
     )
   }
 
   /** そのメンバーの日ごとの歩数（新しい日から順）。 */
   async recordsOf(memberId: MemberId): Promise<DailySteps[]> {
-    return (await this.repository.load())
-      .filter((r) => r.memberId === memberId)
-      .sort((a, b) => (a.date < b.date ? 1 : -1))
+    return (await this.repository.findByMember(memberId)).sort((a, b) => (a.date < b.date ? 1 : -1))
   }
 
   async stepsOf(memberId: MemberId) {
@@ -100,8 +111,14 @@ export class StepRecordService implements StepHistory {
     registeredDate: LocalDate,
     until: LocalDate,
   ): Promise<number | null> {
-    const records = await this.recordsOf(memberId)
-    const earliest = records.at(-1)?.date
+    const records = await this.repository.findByMember(memberId, {
+      from: RECORDING_START_DATE,
+      until,
+    })
+    const earliest = records.reduce<LocalDate | undefined>(
+      (min, r) => (min === undefined || r.date < min ? r.date : min),
+      undefined,
+    )
     const from = earliest !== undefined && earliest < registeredDate ? earliest : registeredDate
     return personalAverage(records, from, until)
   }
@@ -114,24 +131,27 @@ export class StepRecordService implements StepHistory {
    *   今日はまだ途中の歩数なので数えない。昨日までに数える日がない人（今日登録した人）は載せない。
    */
   async leaderboard(members: readonly MemberSummary[], today: LocalDate): Promise<Leaderboard> {
-    const records = await this.repository.load()
-    const of = (id: MemberId) => records.filter((r) => r.memberId === id)
+    const todayRecords = await this.repository.findByDate(today)
+    const totals = await Promise.all(
+      members.map(async (m) => {
+        const records = await this.repository.findByMember(m.memberId, {
+          from: RECORDING_START_DATE,
+          until: today,
+        })
+        return records.reduce((sum, r) => sum + r.steps, 0)
+      }),
+    )
     const averages = await Promise.all(
       members.map((m) => this.averageOf(m.memberId, m.registeredDate, addDays(today, -1))),
     )
     return {
       today: topEntries(
         members.flatMap((m) => {
-          const r = of(m.memberId).find((x) => x.date === today)
+          const r = todayRecords.find((x) => x.memberId === m.memberId)
           return r ? [{ memberId: m.memberId, value: r.steps }] : []
         }),
       ),
-      total: topEntries(
-        members.map((m) => ({
-          memberId: m.memberId,
-          value: of(m.memberId).reduce((sum, r) => sum + r.steps, 0),
-        })),
-      ),
+      total: topEntries(members.map((m, i) => ({ memberId: m.memberId, value: totals[i] }))),
       average: topEntries(
         members.flatMap((m, i) => {
           const average = averages[i]
@@ -145,14 +165,12 @@ export class StepRecordService implements StepHistory {
     memberId: MemberId,
     date: LocalDate,
     apply: (existing: DailySteps | undefined) => DailyStepsChange,
+    guard: boolean,
   ): Promise<RecordResult> {
-    const all = await this.repository.load()
-    const index = all.findIndex((r) => r.memberId === memberId && r.date === date)
-    const result = apply(index >= 0 ? all[index] : undefined)
+    const existing = await this.repository.findOne(memberId, date)
+    const result = apply(existing ?? undefined)
     if (result.event) {
-      if (index >= 0) all[index] = result.dailySteps
-      else all.push(result.dailySteps)
-      await this.repository.save(all)
+      await this.repository.save(result.dailySteps, guard)
       await this.publish(result.event)
     }
     return { steps: result.dailySteps.steps, capped: result.capped, changed: result.event !== null }

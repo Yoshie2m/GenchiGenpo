@@ -24,7 +24,7 @@ import {
   type TeamStanding,
   type WaypointStanding,
 } from '../domain/TeamMission.ts'
-import type { TeamMissionRepository } from '../domain/TeamMissionRepository.ts'
+import type { TeamMissionRepository, TeamMissionState } from '../domain/TeamMissionRepository.ts'
 
 export interface TeamMissionDeps {
   readonly repository: TeamMissionRepository
@@ -96,23 +96,24 @@ export class TeamMissionService {
   }
 
   async current(): Promise<TeamMission | null> {
-    return (await this.deps.repository.load()).missions.at(-1) ?? null
+    return (await this.deps.repository.load()).state.missions.at(-1) ?? null
   }
 
   /** 時刻で起きること（自動確定・開始時の振り分け・途中参加）を進める。 */
   async tick(): Promise<void> {
     const now = this.deps.clock.now()
-    const missions = [...(await this.deps.repository.load()).missions]
-    let changed = false
-    const last = missions.at(-1)
-    if (last && last.status(now) === 'finalized' && now >= autoConfirmAt(last)) {
-      const candidates = await this.deps.candidates.list()
-      missions.push(await this.newMission(candidates[0], nextStartDate(last)))
-      changed = true
-    }
-    const current = missions.at(-1)
-    if (current && (await this.assignMembers(current, now))) changed = true
-    if (changed) await this.deps.repository.save({ missions })
+    await this.updateMissions(async (missions) => {
+      let changed = false
+      const last = missions.at(-1)
+      if (last && last.status(now) === 'finalized' && now >= autoConfirmAt(last)) {
+        const candidates = await this.deps.candidates.list()
+        missions.push(await this.newMission(candidates[0], nextStartDate(last)))
+        changed = true
+      }
+      const current = missions.at(-1)
+      if (current && (await this.assignMembers(current, now))) changed = true
+      return { changed, result: undefined }
+    })
   }
 
   /**
@@ -122,34 +123,54 @@ export class TeamMissionService {
   async createMission(memberId: MemberId, candidateId: string): Promise<TeamMission> {
     await this.tick()
     const now = this.deps.clock.now()
-    const missions = [...(await this.deps.repository.load()).missions]
-    const last = missions.at(-1)
-    let startDate: LocalDate
-    if (!last) {
-      startDate = addDays(localDateOf(now), 1)
-    } else {
-      if (!canCreateNext(memberId, last, now, false)) {
-        throw new DomainError('次のミッションを作成できるのは、前回の優勝チームのメンバーだけです')
+    return this.updateMissions(async (missions) => {
+      const last = missions.at(-1)
+      let startDate: LocalDate
+      if (!last) {
+        startDate = addDays(localDateOf(now), 1)
+      } else {
+        if (!canCreateNext(memberId, last, now, false)) {
+          throw new DomainError(
+            '次のミッションを作成できるのは、前回の優勝チームのメンバーだけです',
+          )
+        }
+        startDate = nextStartDate(last)
       }
-      startDate = nextStartDate(last)
-    }
-    const candidates = await this.deps.candidates.list()
-    const plan = candidates.find((c) => c.candidateId === candidateId)
-    if (!plan) throw new DomainError(`ミッション候補が見つかりません: ${candidateId}`)
-    const mission = await this.newMission(plan, startDate)
-    missions.push(mission)
-    await this.deps.repository.save({ missions })
-    return mission
+      const candidates = await this.deps.candidates.list()
+      const plan = candidates.find((c) => c.candidateId === candidateId)
+      if (!plan) throw new DomainError(`ミッション候補が見つかりません: ${candidateId}`)
+      const mission = await this.newMission(plan, startDate)
+      missions.push(mission)
+      return { changed: true, result: mission }
+    })
   }
 
   async onStepsRecorded(event: StepsRecorded): Promise<void> {
     await this.tick()
     const now = this.deps.clock.now()
-    const { missions } = await this.deps.repository.load()
-    const active = missions.filter((m) => m.status(now) !== 'finalized')
-    if (active.length === 0) return
-    for (const m of active) m.recordSteps(event)
-    await this.deps.repository.save({ missions })
+    await this.updateMissions(async (missions) => {
+      const active = missions.filter((m) => m.status(now) !== 'finalized')
+      if (active.length === 0) return { changed: false, result: undefined }
+      for (const m of active) m.recordSteps(event)
+      return { changed: true, result: undefined }
+    })
+  }
+
+  /**
+   * 読み込み→書き換え→保存を、楽観的ロックの競合時は読み直して再試行する形で行う
+   * （ARCHITECTURE.md「5. 実装固有の設計」Application Service「`tick()` の実行方式」）。
+   */
+  private async updateMissions<T>(
+    mutate: (missions: TeamMission[]) => Promise<{ changed: boolean; result: T }>,
+  ): Promise<T> {
+    for (;;) {
+      const { state, version } = await this.deps.repository.load()
+      const missions = [...state.missions]
+      const { changed, result } = await mutate(missions)
+      if (!changed) return result
+      const saved: TeamMissionState = { missions }
+      if (await this.deps.repository.save(saved, version)) return result
+    }
   }
 
   async view(memberId: MemberId): Promise<TeamMissionView> {
