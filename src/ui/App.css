@@ -27,7 +27,7 @@ body {
   width: auto;
   flex-shrink: 0;
 }
-/* コンセプト文はロゴの横、2行で収める */
+/* コンセプト文はロゴの横。途中で改行せず、ひと続きの文章として幅に合わせて折り返す */
 .app__concept {
   flex: 1;
   min-width: 0;
@@ -42,6 +42,16 @@ body {
 .app__account {
   flex-shrink: 0;
   text-align: right;
+}
+/* ログアウトボタンはログイン名（fs-caption）と同じ大きさにする */
+.app__logout {
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  font-family: var(--font-gothic);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .app__tabs {
   position: fixed;
@@ -70,11 +80,71 @@ body {
   margin: var(--ma-2) 0 0;
 }
 .record-list,
-.candidate-list,
-.special-mission__perfect-list {
+.candidate-list {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+/* 特命の「全員」カード: 数値を中央寄せにし、1.2倍の大きさで出す */
+.special-mission__overall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.special-mission__overall .ho-daiji {
+  justify-content: center;
+  font-size: calc(72px * 1.2); /* ho-daiji の基準72pxの1.2倍 */
+}
+.special-mission__overall .ho-daiji__unit {
+  font-size: calc(16px * 1.2); /* ho-daiji__unit の基準16pxの1.2倍 */
+}
+/*
+ * 称号（極上仕事人・筆頭仕事人・精鋭仕事人）の一覧。
+ * legendary は横3人分、support は横5人分のサイズで並べ、人数が少なければ中央寄せ、
+ * 多ければ同じサイズのまま2段目に折り返す（flex-wrap。折返し後も幅は変えない）。
+ */
+.special-mission__tier-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--ma-2);
+}
+.special-mission__tier-list--legendary > li {
+  flex: 0 1 calc((100% - 2 * var(--ma-2)) / 3);
+}
+.special-mission__tier-list--support > li {
+  flex: 0 1 calc((100% - 4 * var(--ma-2)) / 5);
+}
+/*
+ * 横3人分・5人分に収まるサイズのカードでは、元の短冊カード（ho-tanzaku）の余白のままだと
+ * 中身が入らないため、中身を中央寄せにし、余白と漢数字を縮めて収める。
+ */
+.special-mission__tier-list .ho-tanzaku {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: var(--ma-3) var(--ma-1) var(--ma-1);
+  text-align: center;
+}
+.special-mission__tier-list .fs-h2 {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.special-mission__tier-list .ho-daiji {
+  gap: var(--ma-1);
+  font-size: 26px; /* 横5人分のカード幅に収めるため、基準72pxから縮小 */
+}
+.special-mission__tier-list .ho-daiji__unit {
+  font-size: 10px;
+}
+.special-mission__tier-list .fs-caption {
+  font-size: 10px;
+  line-height: 1.3;
 }
 .record-row {
   display: grid;

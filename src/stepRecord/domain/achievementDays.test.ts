@@ -52,20 +52,46 @@ describe('specialMission（特命）', () => {
     expect(result!.overallRate).toBe(53)
   })
 
-  test('全日数で達成した人だけを極上（パーフェクト）に含める', () => {
+  test('全日数で達成した人だけを極上仕事人に含める', () => {
     const result = specialMission(
       [member('a', 'A', 10), member('b', 'B', 9), member('c', 'C', 10)],
       10,
     )
-    expect(result!.perfectMembers).toEqual([
-      { memberId: memberId('a'), displayName: 'A', achievementDays: 10 },
-      { memberId: memberId('c'), displayName: 'C', achievementDays: 10 },
+    expect(result!.legendaryWorkers).toEqual([
+      { memberId: memberId('a'), displayName: 'A', achievementDays: 10, rate: 100 },
+      { memberId: memberId('c'), displayName: 'C', achievementDays: 10, rate: 100 },
     ])
   })
 
-  test('パーフェクトの人がいなければ空配列', () => {
+  test('達成率90%以上100%未満の人を筆頭仕事人に含める', () => {
     const result = specialMission([member('a', 'A', 9)], 10)
-    expect(result!.perfectMembers).toEqual([])
+    expect(result!.rightHandWorkers).toEqual([
+      { memberId: memberId('a'), displayName: 'A', achievementDays: 9, rate: 90 },
+    ])
+    expect(result!.legendaryWorkers).toEqual([])
+    expect(result!.eliteWorkers).toEqual([])
+  })
+
+  test('達成率80%以上90%未満の人を精鋭仕事人に含める', () => {
+    const result = specialMission([member('a', 'A', 8)], 10)
+    expect(result!.eliteWorkers).toEqual([
+      { memberId: memberId('a'), displayName: 'A', achievementDays: 8, rate: 80 },
+    ])
+    expect(result!.rightHandWorkers).toEqual([])
+  })
+
+  test('達成率80%未満の人はどの称号にも含めない', () => {
+    const result = specialMission([member('a', 'A', 7)], 10)
+    expect(result!.legendaryWorkers).toEqual([])
+    expect(result!.rightHandWorkers).toEqual([])
+    expect(result!.eliteWorkers).toEqual([])
+  })
+
+  test('称号を持つ人がいなければ、それぞれ空配列', () => {
+    const result = specialMission([member('a', 'A', 1)], 10)
+    expect(result!.legendaryWorkers).toEqual([])
+    expect(result!.rightHandWorkers).toEqual([])
+    expect(result!.eliteWorkers).toEqual([])
   })
 
   test('メンバーが1人もいなければ null', () => {

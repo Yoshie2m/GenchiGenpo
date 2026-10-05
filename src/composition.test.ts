@@ -142,8 +142,8 @@ describe('チームミッションの流れ', () => {
   })
 })
 
-describe('特命: 参加メンバー全員分の達成率と、極上（パーフェクト）の一覧', () => {
-  test('10月1日〜昨日（今日は除く）の達成日数から、全員分の達成率と極上の一覧を出す', async () => {
+describe('特命: 参加メンバー全員分の達成率と、称号（極上仕事人・筆頭仕事人・精鋭仕事人）の一覧', () => {
+  test('10月1日〜昨日（今日は除く）の達成日数から、全員分の達成率と称号の一覧を出す', async () => {
     localStorage.clear()
     const app = createApp({
       storage: localStorage,
@@ -171,11 +171,14 @@ describe('特命: 参加メンバー全員分の達成率と、極上（パー�
     const members = await app.members.members()
     const result = await app.steps.specialMission(members, today)
 
-    // 合計達成日数 3+1+0+2=6、4人×3日間=12 → 50%。全日数(3日)で達成したのは A だけ
+    // 合計達成日数 3+1+0+2=6、4人×3日間=12 → 50%。全日数(3日)で達成したのは A だけ（極上仕事人）。
+    // B は1/3=33%、D は2/3=67%で、どちらも80%未満のため称号なし
     expect(result).toEqual({
       overallRate: 50,
       totalDays: 3,
-      perfectMembers: [{ memberId: a.id, displayName: 'A', achievementDays: 3 }],
+      legendaryWorkers: [{ memberId: a.id, displayName: 'A', achievementDays: 3, rate: 100 }],
+      rightHandWorkers: [],
+      eliteWorkers: [],
     })
   })
 })

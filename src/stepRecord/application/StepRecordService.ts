@@ -11,11 +11,11 @@ import {
 } from '../domain/DailySteps.ts'
 import type { DailyStepsRepository } from '../domain/DailyStepsRepository.ts'
 import { achievementDaysOf, specialMission } from '../domain/achievementDays.ts'
-import type { SpecialMission } from '../domain/achievementDays.ts'
+import type { SpecialMission, TierMember } from '../domain/achievementDays.ts'
 import { topEntries, type LeaderboardEntry } from '../domain/leaderboard.ts'
 import { personalAverage } from '../domain/personalAverage.ts'
 
-export type { LeaderboardEntry, SpecialMission }
+export type { LeaderboardEntry, SpecialMission, TierMember }
 
 /** 番付（今日の歩数・全日数の総歩数・平均歩数の上位5名）。 */
 export interface Leaderboard {
@@ -165,7 +165,7 @@ export class StepRecordService implements StepHistory {
 
   /**
    * 特命: 参加メンバー全員分の達成率（1日8000歩以上を記録した日数の割合）と、
-   * 極上（パーフェクト、対象期間のすべての日で達成した人）の一覧（DOMAINS.md「特命」）。
+   * 達成率に応じた3つの称号（極上仕事人・筆頭仕事人・精鋭仕事人）の一覧（DOMAINS.md「特命」）。
    * 対象期間は2026年10月1日から昨日まで（今日は途中の歩数なので数えない。番付の平均歩数と同じ考え方）。
    */
   async specialMission(
