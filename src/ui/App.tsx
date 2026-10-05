@@ -41,11 +41,8 @@ type TabId = 'today' | 'record' | 'journey' | 'team' | 'special' | 'ranking'
 /** 下部タブには出さないが、URL の # では直接開ける（隊は裏で残す。開発・テスト用）。 */
 const HIDDEN_TAB_IDS: readonly TabId[] = ['team']
 
-// コンセプト文は2行に分けて表示する（ヘッダーでロゴの横に収めるため）。文言は変えない。
-const CONCEPT_LINE_1 = '絵図（画面）を見るな、現場へ走れ。'
-const CONCEPT_LINE_2 = '足で稼ぐ仕事人の現地現物記録。'
 /** コンセプト文（デザインシステム「アプリ名とコンセプト」。言い換えずにそのまま使う）。どのタブでも上部に出す。 */
-export const CONCEPT = `${CONCEPT_LINE_1}${CONCEPT_LINE_2}`
+export const CONCEPT = '絵図（画面）を見るな、現場へ走れ。足で稼ぐ仕事人の現地現物記録。'
 
 const MEMBER_KEY = 'genchigenpo:devCurrentMember'
 
@@ -141,15 +138,15 @@ export default function App({ app, auth }: { app: AppServices; auth?: AuthSessio
           {/* 見出し（現地現歩）は画面には出さないが、H1として残す（スクリーンリーダー用）。 */}
           <h1 className="visually-hidden">現地現歩</h1>
           <img src={logoUrl(night)} alt="歩" className="app__logo" />
-          <p className="app__concept">
-            {CONCEPT_LINE_1}
-            <br />
-            {CONCEPT_LINE_2}
-          </p>
+          <p className="app__concept">{CONCEPT}</p>
           <div className="app__account">
             <p className="fs-caption">{me?.displayName}さん</p>
             {auth && (
-              <button type="button" className="ho-btn ho-btn--text" onClick={auth.onSignOut}>
+              <button
+                type="button"
+                className="ho-btn ho-btn--text app__logout"
+                onClick={auth.onSignOut}
+              >
                 ログアウト
               </button>
             )}
