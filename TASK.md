@@ -101,7 +101,6 @@
 - [ ] 招待制の運用を決める（誰が・いつメンバーのメールアドレスを登録するか。Supabase の `inviteUserByEmail` を使うか、サインアップ用リンクを配るか）（ARCHITECTURE.md 4.4）
 
 #### 実装（設計判断が固まってから着手）
-- [ ] ARCHITECTURE.md「データ永続化（DB）設計」のテーブル定義（`members`・`daily_steps`・`personal_missions` 系・`candidate_order`・`team_mission_state`）とRLSポリシーを、`supabase/migrations/` に最初のmigrationとして作成する（ARCHITECTURE.md「マイグレーション管理」案A）
 - [ ] `members.id` ＝ Supabase Auth の `auth.users.id` とする前提で、招待・初回ログイン時にメンバーの行を作る仕組みを決めて実装する（関連: 招待制の運用を決めるタスク）
 - [ ] `TeamMissionRepository` の保存に版番号（`version`）を持たせ、競合時は保存を失敗させて呼び出し側が読み直して再試行する仕組み（楽観的ロック）を実装する（ARCHITECTURE.md「5. 実装固有の設計」Application Service）
 - [ ] 各コンテキストに Supabase 実装（`infrastructure/Supabase*Repository.ts`）を追加する
@@ -237,4 +236,5 @@
 - [x] 無料枠の範囲を見積る → 想定規模（メンバー10〜20人・数か月）では当面問題なし。`team_mission_state` の全件読み書きが帯域（egress）を使う主な要因で、継続期間が長くなるほど効いてくる。自動停止（7日間アクセスがないと停止）は規模に関わらない別のリスクとして対策が必要（ARCHITECTURE.md「無料枠の見積り」に反映）
 - [x] フロントエンドをNext.jsへ移行するタイミングを決める → 移行しない。Viteのまま本番化する（当初の動機だったiOSの歩数取得制約は解決済みで、Next.jsの強み（SSR・API Routes）を使う理由が今の設計にないため）（ARCHITECTURE.md 2章・README.md に反映）
 - [x] Supabaseプロジェクトを作成し、APIキー・接続情報の管理方法を決める → 作成済み（`btkmlbhotcuqssbpzjdj`）。ローカルはDocker（`supabase start`）、本番はこのプロジェクト専用。環境変数は `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`、ローカルは`.env.local`（gitignore対象）、本番はCloudflare PagesのEnvironment variablesに設定し、CIには追加のsecretsは不要（ARCHITECTURE.md「接続情報の管理」に反映。`.env.example` を追加）
+- [x] ARCHITECTURE.md「データ永続化（DB）設計」のテーブル定義とRLSポリシーを、`supabase/migrations/` に最初のmigrationとして作成する → `supabase/migrations/20261005002241_initial_schema.sql`。`members`・`daily_steps`・`personal_missions`系・`candidate_order`・`team_mission_state` の7テーブルとRLSポリシーを作成し、`supabase db reset`（ローカルDocker）で適用できることを確認した
 - [x] Repository インターフェースの非同期化ステップ1を実装 → 5つの `domain/*Repository.ts` の `load()`/`save()` を `Promise` を返す形に変え、`LocalStorage*Repository.ts`・6つの `application/*Service.ts`・`publishedLanguage/queries.ts`・`shared/EventBus.ts`（ハンドラの `async` 対応）・`composition.ts`・UI層（`useAsyncData` フックを新設し、各画面・`DevPanel`・`App.tsx` を非同期読み込みに変更）・テスト（`composition.test.ts`・`App.test.tsx` 等）を対応させた。読み書きの単位（コンテキスト全件）は変えていない（ステップ2で対応）。format・lint・tsc・テスト（167件）・E2Eがすべて通ることを確認済み
