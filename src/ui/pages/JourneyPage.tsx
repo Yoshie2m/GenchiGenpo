@@ -1,14 +1,19 @@
 import type { JourneyView } from '../../personalMission/application/PersonalMissionService.ts'
 import { provinceSceneUrl } from '../design-system/assets.ts'
-import { Daiji, Icon, Pictogram, Steps } from '../design-system/components.tsx'
-import { formatDate, formatDateTime } from '../format.ts'
+import { Icon, Pictogram, Steps } from '../design-system/components.tsx'
+import { formatDateTime } from '../format.ts'
 import { AsyncView } from '../AsyncView.tsx'
 import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
 
+/** 「三河国」のような旧国名を「三河の国」の形にする。 */
+function provinceOf(province: string): string {
+  return `${province.replace(/国$/, '')}の国`
+}
+
 /**
- * 道中: 個人ミッション（本社 → 新虎オフィス）。今いる国の景色を背景に、累計歩数（大字）、
- * 次の通過点と一口メモ、街道の線（RouteLine）、通過記録（CheckpointLog）を出す。
+ * 道中: 個人ミッション（本社 → 新虎オフィス）を「道中試練」として出す。試練の説明、行程・総道のり・
+ * 進捗・現在地の要約、今いる国の景色、街道の線（RouteLine）、通過記録（CheckpointLog）の順に並べる。
  * 通過点に着いても特別な表示は出さない（記録が残るだけ）。
  */
 export function JourneyPage({ app, memberId, version }: PageProps) {
@@ -36,35 +41,42 @@ function Journey({ view }: { view: JourneyView }) {
 
   return (
     <section aria-labelledby="journey-title" className="page journey">
+      <h2 id="journey-title" className="fs-title">
+        道中試練
+      </h2>
+
+      <div className="ho-tanzaku">
+        <span className="ho-tanzaku__title" aria-hidden="true">
+          其の壱
+        </span>
+        <p className="fs-body">
+          最初の試練は、各々の足跡を刻みつつ「江戸陣屋（新虎）」へ到達すること。
+        </p>
+      </div>
+
+      <dl className="journey__summary">
+        <div>
+          <dt className="fs-caption">道中（行程）</dt>
+          <dd className="fs-body">
+            {view.start.name} ─── {view.current.name} ─── {view.goal.name}
+          </dd>
+        </div>
+        <div>
+          <dt className="fs-caption">総道のり（距離）</dt>
+          <dd className="fs-body">{view.totalDistanceRi}里</dd>
+        </div>
+        <div>
+          <dt className="fs-caption">現在の進捗（完遂率）</dt>
+          <dd className="fs-body">{view.progressPercent}％達成</dd>
+        </div>
+        <div>
+          <dt className="fs-caption">現在地</dt>
+          <dd className="fs-body">{provinceOf(view.current.province)}の宿場町</dd>
+        </div>
+      </dl>
+
       {scene && (
         <img className="journey__scene" src={scene} alt={`${view.current.province}の景色`} />
-      )}
-      <h2 id="journey-title" className="fs-title">
-        道中
-      </h2>
-      <p className="fs-caption">
-        {view.routeName}・旅立ち {formatDate(view.startDate)}
-      </p>
-      <Daiji steps={view.cumulativeSteps} label="累計歩数" />
-
-      {view.completed || !view.next ? (
-        <div className="ho-tanzaku">
-          <p className="fs-body">旅を終えました。</p>
-          <p className="fs-body">次の道は支度中です。</p>
-        </div>
-      ) : (
-        <div className="ho-tanzaku">
-          <span className="ho-tanzaku__title" aria-hidden="true">
-            次
-          </span>
-          <p className="ho-routeline__next">
-            次の通過点 {view.next.name}まで あと{' '}
-            <b>
-              <Steps steps={view.stepsToNext} />
-            </b>
-          </p>
-          <p className="memo fs-body">{view.next.memo}</p>
-        </div>
       )}
 
       <section className="ho-routeline" aria-label="街道">

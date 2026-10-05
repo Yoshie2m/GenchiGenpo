@@ -48,16 +48,18 @@ test('1つのチームミッションを、作成から到達・順位確定・�
   await expect(page.getByText(/進行中/)).toBeVisible()
 })
 
-test('道中: 歩数を記録すると累計歩数が増え、次の通過点と一口メモが出る', async ({ page }) => {
+test('道中試練: 歩数を記録すると進捗（完遂率）が増え、行程・通過記録が出る', async ({ page }) => {
   await open(page, 'journey')
-  const total = page.getByRole('img', { name: /^累計歩数/ })
-  const before = Number((await total.getAttribute('aria-label'))!.replace(/\D/g, ''))
+  const progress = page.getByText(/％達成$/)
+  const before = Number((await progress.textContent())!.replace(/\D/g, ''))
   await tab(page, '今日').click()
   await page.getByLabel('今日の歩数（その日の合計）').fill('12000')
   await page.getByRole('button', { name: '記録する' }).click()
   await tab(page, '道中').click()
-  await expect(total).toHaveAttribute('aria-label', `累計歩数 ${before + 12000}歩`)
-  await expect(page.getByText(/次の通過点/)).toBeVisible()
+  await expect
+    .poll(async () => Number((await progress.textContent())!.replace(/\D/g, '')))
+    .toBeGreaterThan(before)
+  await expect(page.getByText('道中（行程）')).toBeVisible()
   await expect(page.getByRole('list', { name: '通過記録' })).toBeVisible()
 })
 
