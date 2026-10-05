@@ -407,3 +407,19 @@ Supabase のプロジェクト（`btkmlbhotcuqssbpzjdj`）を作成した。ロ�
 - 新しい業務ルールをSQLに追加するのではなく、TypeScript側と同じ比較をWHERE句に持たせるだけなので、トリガー（案C、二重実装）より軽い。これで同時書き込みの競合も解消できる。
 - `DailyStepsRepository`（Repository インターフェースの見直しの対象）の実装（Supabase版）で、記録経路の保存はガード付きUPSERT、修正経路の保存はガードなしUPSERTを使う。呼び出し元（`StepRecordService`）は `DailySteps.update()` と `correct()` のどちらを呼んだかに応じて、Repositoryのどちらの保存メソッドを呼ぶかを決める。
 - `insert ... on conflict ... do update ... where` は影響行数が0でも例外にならないため、呼び出し側は「保存できたか」を確認する必要がある場合、影響行数を見るか、保存後に読み直す。今の規模（同じ日付への同時書き込みは稀）では、保存が無視された場合に呼び出し側へエラーを返す・読み直して再試行する、のどちらにするかは実装時に決める。
+
+### テストの方針 【採用】（案A: ローカルSupabase CLIに実際に接続して検証）
+
+既存のドメイン・アプリケーションサービスのユニットテスト（`composition.test.ts` 等）は、`LocalStorage*Repository`（jsdomの `localStorage`、Dockerなし）で動いており、変更しない。論点は、新しく作る `Supabase*Repository`（実際のSQL・RLS・条件付きUPSERTを使う実装）をどう検証するかだけ。
+
+| 案 | 内容 | 長所 | 短所 |
+|---|---|---|---|
+| A. ローカルSupabase CLI（Docker）に実際に接続して検証 | `supabase-js` で実際のSQLを実行し、CRUD・RLS・条件付きUPSERTの挙動を検証する結合テストを書く | RLSやCASなど「本物のPostgresでしか確認できない」挙動を正しく検証できる | Dockerが必要。通常のユニットテストより遅い。CIで動かすにはSupabase CLIのセットアップが要る |
+| B. `supabase-js` クライアントをモックする | ネットワーク層をモックし、クエリの組み立てだけを検証する | 速い。Dockerが要らない | RLS・CAS・制約など、一番確認したいDB側の挙動を一切検証できない |
+| C. 個別のテストは書かず、E2Eだけで確認する | Playwrightの画面操作テストに一本化する | テストの種類が増えない | どのクエリ・ポリシーが壊れているかE2Eからは特定しづらい。他人の歩数を書けないこと等の境界ケースを網羅しにくい |
+
+**決定: 案A【採用】**
+- RLSで所有者チェックを強制する決定（データ永続化（DB）設計）・条件付きUPSERTでDB側に保証を持たせる決定（`daily_steps` の日次上書きルール）は、いずれも実際のPostgresでしか正しく検証できない。モック（案B）では一番確認したい部分を確認できない。
+- `test:ocr`（実際の文字認識を使うテスト。CIでは動かさない）と同じ発想で、この結合テストは別コマンド（`npm run test:integration`、ファイル名は `*.integration.test.ts`）に分離し、通常の `npm test` には含めない（Dockerが必要なため）。
+- CI（`.github/workflows/ci.yml`）では、Supabase CLIをセットアップしてローカルPostgresを起動した上で、この結合テストを実行するジョブを追加する。マイグレーション管理で決めた「`supabase db reset` で migrations が問題なく適用できるかを確認するジョブ」と合わせて一本化する（同じローカルPostgresを使うため）。
+- E2E（Playwright）は、Supabase実装への切り替え後は、ローカルSupabase CLIに接続して実行するように変える（今は `LocalStorage*Repository` に対して実行している）。

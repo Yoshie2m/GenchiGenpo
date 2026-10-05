@@ -106,8 +106,9 @@
 - [ ] 開発用画面の「メンバーの切り替え（ログインなし）」を、本番の認証フローに置き換える
 - [ ] 非同期化にともなうUIの対応（読み込み中・エラー表示）を各画面に加える
 - [ ] `tick()` の実行方式を実装する（決めた方式に応じて、Edge Function／cron、またはクライアント起動+排他制御）
-- [ ] テストの方針を決めて実装する（ユニットテストでのSupabaseのフェイク、結合テストでのローカルSupabase CLIの利用など）
-- [ ] CI（`.github/workflows/ci.yml`）に、`supabase db reset` で migrations が問題なく適用できるかを確認するジョブを追加する（ARCHITECTURE.md「マイグレーション管理」）
+- [ ] `Supabase*Repository` の結合テスト（`*.integration.test.ts`、ローカルSupabase CLIに実際に接続してCRUD・RLS・条件付きUPSERTを検証）を書き、`npm run test:integration` のような別コマンドに分離する（ARCHITECTURE.md「5. 実装固有の設計」テストの方針）
+- [ ] CI（`.github/workflows/ci.yml`）に、Supabase CLIをセットアップしてローカルPostgresを起動し、`supabase db reset`（migrationsの適用確認）と上記の結合テストを実行するジョブを追加する（ARCHITECTURE.md「マイグレーション管理」「テストの方針」）
+- [ ] E2E（Playwright）をローカルSupabase CLIに接続して実行するように変える（ARCHITECTURE.md「テストの方針」）
 - [ ] iOSショートカット連携・画面キャプチャ取り込みの送信先をSupabase経由に合わせる（関連: 上の「iOSショートカット連携の送信方法を決める」「Androidのメンバーが...」タスク、ARCHITECTURE.md 4.2・4.3）
 - [ ] Supabaseプロジェクトの自動停止（7日間アクセスがないと停止する）を防ぐ仕組みを用意する（例: GitHub Actionsで1日1回、軽いリクエストを送るスケジュールジョブ）（ARCHITECTURE.md「無料枠の見積り」）
 - [ ] 本番稼働後、Supabaseダッシュボードで帯域（egress）の使用量を定期的に確認する運用を決める。無料枠（10GB/月）の3〜5割に近づいたら、Repository非同期化ステップ2（`team_mission_state` の粒度見直し）に着手する（ARCHITECTURE.md「無料枠の見積り」）
@@ -239,3 +240,4 @@
 - [x] 招待制の運用を決める → 案A（Supabase Studio の「Invite user」。追加実装なし）。運営者がミッション開始前に参加予定全員を一括登録、途中参加者は個別追加。Studioの招待は表示名を設定できないため、`members` 行の表示名は初回ログイン時に本人が入力する見込み（ARCHITECTURE.md 4.4「招待制の運用」に反映）
 - [x] 歩数の「日次合計の上書き」ルールをDB側でどう保証するか決める → 案B（条件付きUPSERT）。記録経路の保存は `on conflict ... do update ... where daily_steps.steps <= excluded.steps` とし、今の値より小さいときはDBが更新を取り消す。誤入力の修正（`correct()`）はこのWHEREを外した別クエリを使う。トリガー（案C）は記録と修正を区別する仕組みが別途必要でドメインルールの二重実装になるため見送った（ARCHITECTURE.md「5. 実装固有の設計」Application Service「`daily_steps` の日次上書きルール」に反映）
 - [x] コンテキスト単位の「まとめて読み込み・まとめて保存」の設計を見直す（Repository 非同期化の案3のステップ2） → 実際にスケールに比例して肥大化するのは `daily_steps` だけ（`team_mission_state` は既に1集約として決定済み、`members`・`candidate_order` は元々小さく一定）と判断し、`MemberRepository` は `all()`/`add(member)`、`PersonalMissionRepository` は `findByMember(memberId)`/`save(mission)`、`DailyStepsRepository` は `findOne`/`save(record, guard)`/`findByMember(memberId, range?)`/`findByDate(date)` に分ける設計にした。`CandidateListRepository`・`TeamMissionRepository` は変更なし。SUMをSQL側の集計クエリに持たせる最適化は、無料枠の実データを見てから検討するとして先送りした（ARCHITECTURE.md「5. 実装固有の設計」Repository インターフェース「ステップ2の設計」に反映）
+- [x] テストの方針を決める → 案A（ローカルSupabase CLIに実際に接続して検証）。既存のドメイン・アプリケーションサービスのユニットテストは `LocalStorage*Repository` のまま変更しない。`Supabase*Repository` はRLS・条件付きUPSERTが本物のPostgresでしか検証できないため、`test:ocr`と同じ発想で結合テスト（`*.integration.test.ts`）を別コマンドに分離し、CIでは別ジョブ（Supabase CLIセットアップ＋`supabase db reset`と合わせて実行）にする。E2EもローカルSupabase CLI接続に切り替える（ARCHITECTURE.md「5. 実装固有の設計」テストの方針に反映）
