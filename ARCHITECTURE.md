@@ -371,8 +371,9 @@ Supabase のプロジェクト（`btkmlbhotcuqssbpzjdj`）を作成した。ロ�
 - 開発用に別のSupabaseプロジェクトを追加作成する案は、無料プランのプロジェクト数の上限を気にする必要が出るため見送った。
 - 環境変数は Vite の規約に合わせ `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` の2つ（`import.meta.env` で読む）。
   - ローカル: `.env.local`（gitignore の `*.local` パターンでコミット対象外）に、`supabase start` が表示するローカルの URL・anon key を書く。リポジトリには値を含まない `.env.example` を置く。
-  - 本番: 値はリポジトリに置かず、Cloudflare Pages の Environment variables（Production）に `VITE_SUPABASE_URL=https://btkmlbhotcuqssbpzjdj.supabase.co` と、Supabase 管理画面（Project Settings → API）の anon key を設定する。
-- CI（GitHub Actions）: 現在のCIジョブ（整形・lint・テスト・ビルド・E2E）はSupabaseに接続しないため、追加のsecretsは不要。将来追加する `supabase db reset` のCIジョブ（上記「マイグレーション管理」）も、CIランナー内で起動する一時的なローカルPostgresに対して行うため、本番プロジェクトの資格情報は不要。
+  - 本番: 値はリポジトリに置かず、**GitHub Actions のリポジトリ secrets**（`VITE_SUPABASE_URL=https://btkmlbhotcuqssbpzjdj.supabase.co`、`VITE_SUPABASE_ANON_KEY` はSupabase 管理画面（Project Settings → API）の anon key）に設定する。
+    - 【訂正】当初はCloudflare Pages の Environment variables に設定すると決めていたが、誤りだった。このプロジェクトのデプロイは `.github/workflows/ci.yml` の `deploy` ジョブで `npm run build` を実行してから `wrangler pages deploy dist` で**ビルド済みのファイルを直接アップロード**する方式（Cloudflare Pages 自身がビルドする「Git連携ビルド」ではない）。`VITE_*` はViteがビルド時に埋め込む値なので、ビルドが実際に行われる場所（GitHub Actionsのランナー）で設定されている必要がある。Cloudflare Pages の Environment variables は、Cloudflare自身がビルドするときにしか使われないため、この構成では効かない。
+- CI（GitHub Actions）: 整形・lint・テスト・ビルド・結合テスト・E2Eのジョブ自体はSupabaseに接続しないため、これらに追加のsecretsは不要（上記「マイグレーション管理」のCIジョブも、CIランナー内で起動する一時的なローカルPostgresに対して行うため、本番プロジェクトの資格情報は不要）。ただし `deploy` ジョブの `npm run build` には、本番の接続情報を埋め込むために `secrets.VITE_SUPABASE_URL`/`secrets.VITE_SUPABASE_ANON_KEY` を渡す。
 - anon key は RLS 前提で公開されても安全な設計（上記「RLS（Row Level Security）の方針」）だが、取り扱いの手間を減らすためリポジトリにはコミットしない運用を変えない。
 - service_role key は今回の設計（クライアントが直接 RLS 経由で読み書きする）では使わない。将来必要になっても `VITE_` を先頭につけない（Vite はこの prefix を持つ環境変数だけをクライアントバンドルに含めるため、これが service_role key 漏洩を防ぐ主な防御線になる）。
 
