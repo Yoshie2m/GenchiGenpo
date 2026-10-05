@@ -24,7 +24,8 @@ test('1つのチームミッションを、作成から到達・順位確定・�
     await page.getByRole('button', { name: '記録する' }).click()
     await expect(page.getByRole('status')).toContainText('記録しました')
     await dev(page, 'ほかのメンバーの今日の歩数を入れる')
-    await tab(page, '隊').click()
+    // 隊（チームミッション）は下部タブから外したが、裏では残っている。URL の # から開く
+    await page.goto('/#team')
     if (await page.getByRole('img', { name: '到達' }).isVisible()) break
     await dev(page, '1日進める')
   }

@@ -40,12 +40,18 @@ async function setup() {
 const tab = (name: string) =>
   within(screen.getByRole('navigation', { name: '主要' })).getByRole('button', { name })
 
+/** 隊（チームミッション）は下部タブから外したが、裏では残している。URL の # から開く（テスト用）。 */
+function openHiddenTab(id: string) {
+  window.history.pushState(null, '', `#${id}`)
+  window.dispatchEvent(new HashChangeEvent('hashchange'))
+}
+
 test('下部の5タブで画面を切り替える', async () => {
   const { user } = await setup()
   for (const [name, heading] of [
     ['記録', '記録'],
     ['道中', '道中'],
-    ['隊', '隊'],
+    ['特命', '特命'],
     ['番付', '番付'],
     ['今日', '今日の歩み'],
   ]) {
@@ -102,9 +108,9 @@ test('道中の画面に、次の通過点と一口メモが出る', async () =>
   expect(screen.getByRole('list', { name: '通過記録' })).toBeInTheDocument()
 })
 
-test('隊の画面: ミッションがなければ候補から選び、翌日から始まる', async () => {
+test('隊の画面（下部タブからは外したが裏で残っている）: ミッションがなければ候補から選び、翌日から始まる', async () => {
   const { user } = await setup()
-  await user.click(tab('隊'))
+  openHiddenTab('team')
   await user.click(await screen.findByRole('button', { name: '遠州・浜名屋にする' }))
   expect(await screen.findByRole('heading', { level: 2, name: /遠州・浜名屋/ })).toBeInTheDocument()
   expect(screen.getByText(/10月5日（月）の 0:00 に始まります/)).toBeInTheDocument()
@@ -112,7 +118,7 @@ test('隊の画面: ミッションがなければ候補から選び、翌日か
 
 test('開発用画面で日付を進めると、ミッションが始まり隊に振り分けられる', async () => {
   const { user } = await setup()
-  await user.click(tab('隊'))
+  openHiddenTab('team')
   await user.click(await screen.findByRole('button', { name: '遠州・浜名屋にする' }))
   await user.click(screen.getByText(/開発用/))
   await user.click(screen.getByRole('button', { name: '1日進める' }))

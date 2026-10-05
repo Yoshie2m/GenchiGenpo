@@ -8,6 +8,8 @@ import { UiContext } from './design-system/uiContext.ts'
 import { JourneyPage } from './pages/JourneyPage.tsx'
 import { RankingPage } from './pages/RankingPage.tsx'
 import { RecordPage } from './pages/RecordPage.tsx'
+import { SpecialMissionPage } from './pages/SpecialMissionPage.tsx'
+// 隊（チームミッション）はタブからは外したが、裏では動かし続ける（仕様が変わったら TABS に戻す）。
 import { TeamPage } from './pages/TeamPage.tsx'
 import { TodayPage } from './pages/TodayPage.tsx'
 import {
@@ -26,14 +28,18 @@ export interface AuthSession {
   readonly onSignOut: () => void
 }
 
+// 隊（チームミッション）は DOMAINS.md「特命」の決定でタブから外した。TeamMissionService 自体は
+// 裏で動かし続けており、仕様が変わったらこの配列に { id: 'team', label: '隊', icon: 'tai' } を戻すだけでよい。
 const TABS: readonly { id: TabId; label: string; icon: IconName }[] = [
   { id: 'today', label: '今日', icon: 'ho' },
   { id: 'record', label: '記録', icon: 'ki' },
   { id: 'journey', label: '道中', icon: 'michi' },
-  { id: 'team', label: '隊', icon: 'tai' },
+  { id: 'special', label: '特命', icon: 'tai' },
   { id: 'ranking', label: '番付', icon: 'banzuke' },
 ]
-type TabId = 'today' | 'record' | 'journey' | 'team' | 'ranking'
+type TabId = 'today' | 'record' | 'journey' | 'team' | 'special' | 'ranking'
+/** 下部タブには出さないが、URL の # では直接開ける（隊は裏で残す。開発・テスト用）。 */
+const HIDDEN_TAB_IDS: readonly TabId[] = ['team']
 
 /** コンセプト文（デザインシステム「アプリ名とコンセプト」。言い換えずにそのまま使う）。どのタブでも上部に出す。 */
 export const CONCEPT =
@@ -52,10 +58,12 @@ async function initialMember(app: AppServices): Promise<MemberId> {
   return (members.find((m) => m.memberId === saved) ?? members[0]).memberId
 }
 
-/** PoC の画面の骨組み: 下部の5タブ（今日 / 記録 / 道中 / 隊 / 番付）と開発用画面（表示の設定もここ）。 */
+/** PoC の画面の骨組み: 下部の5タブ（今日 / 記録 / 道中 / 特命 / 番付）と開発用画面（表示の設定もここ）。 */
 function tabFromHash(): TabId {
   const id = window.location.hash.slice(1)
-  return TABS.some((t) => t.id === id) ? (id as TabId) : 'today'
+  if (TABS.some((t) => t.id === id)) return id as TabId
+  if (HIDDEN_TAB_IDS.some((t) => t === id)) return id as TabId
+  return 'today'
 }
 
 export default function App({ app, auth }: { app: AppServices; auth?: AuthSession }) {
@@ -161,6 +169,7 @@ export default function App({ app, auth }: { app: AppServices; auth?: AuthSessio
           {tab === 'record' && <RecordPage {...props} />}
           {tab === 'journey' && <JourneyPage {...props} />}
           {tab === 'team' && <TeamPage {...props} />}
+          {tab === 'special' && <SpecialMissionPage {...props} />}
           {tab === 'ranking' && <RankingPage {...props} />}
         </main>
         <nav className="ho-tabbar app__tabs" aria-label="主要">

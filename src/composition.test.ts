@@ -141,3 +141,36 @@ describe('チームミッションの流れ', () => {
     expect(next.startDate).toBe(finalized.next?.startDate)
   })
 })
+
+describe('特命: 参加メンバー全員の達成日数の平均と、上位3名の平均', () => {
+  test('10月1日〜昨日（今日は除く）の達成日数で、全員平均と上位3名平均を出す', async () => {
+    localStorage.clear()
+    const app = createApp({
+      storage: localStorage,
+      baseClock: fixedClock(new Date('2026-10-04T03:00:00Z')), // 日本時間 10/4 12:00
+      ids: sequentialIdGenerator('id'),
+    })
+    const a = await app.registerMember('A')
+    const b = await app.registerMember('B')
+    const c = await app.registerMember('C')
+    const d = await app.registerMember('D')
+
+    // A: 3日達成、B: 1日達成、C: 0日達成、D: 2日達成
+    const d01 = parseLocalDate('2026-10-01')
+    const d02 = parseLocalDate('2026-10-02')
+    const d03 = parseLocalDate('2026-10-03')
+    await app.steps.recordSteps(a.id, d01, 8_000, 'manual')
+    await app.steps.recordSteps(a.id, d02, 9_000, 'manual')
+    await app.steps.recordSteps(a.id, d03, 8_500, 'manual')
+    await app.steps.recordSteps(b.id, d01, 8_000, 'manual')
+    await app.steps.recordSteps(b.id, d02, 5_000, 'manual')
+    await app.steps.recordSteps(c.id, d01, 100, 'manual')
+    await app.steps.recordSteps(d.id, d01, 8_000, 'manual')
+    await app.steps.recordSteps(d.id, d02, 10_000, 'manual')
+
+    const members = await app.members.members()
+    const result = await app.steps.specialMission(members, today)
+
+    expect(result).toEqual({ allAverage: 1.5, top3Average: 2 })
+  })
+})

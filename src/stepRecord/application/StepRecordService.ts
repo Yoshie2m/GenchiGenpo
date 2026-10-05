@@ -10,10 +10,12 @@ import {
   type StepSource,
 } from '../domain/DailySteps.ts'
 import type { DailyStepsRepository } from '../domain/DailyStepsRepository.ts'
+import { achievementDaysOf, specialMission } from '../domain/achievementDays.ts'
+import type { SpecialMission } from '../domain/achievementDays.ts'
 import { topEntries, type LeaderboardEntry } from '../domain/leaderboard.ts'
 import { personalAverage } from '../domain/personalAverage.ts'
 
-export type { LeaderboardEntry }
+export type { LeaderboardEntry, SpecialMission }
 
 /** 番付（今日の歩数・全日数の総歩数・平均歩数の上位5名）。 */
 export interface Leaderboard {
@@ -159,6 +161,28 @@ export class StepRecordService implements StepHistory {
         }),
       ),
     }
+  }
+
+  /**
+   * 特命: 参加メンバー全員の達成日数（1日8000歩以上を記録した日の数）の平均値と、
+   * 達成日数が多い上位3名の平均値（DOMAINS.md「特命」）。対象期間は2026年10月1日から昨日まで
+   * （今日は途中の歩数なので数えない。番付の平均歩数と同じ考え方）。
+   */
+  async specialMission(
+    members: readonly MemberSummary[],
+    today: LocalDate,
+  ): Promise<SpecialMission | null> {
+    const until = addDays(today, -1)
+    const counts = await Promise.all(
+      members.map(async (m) => {
+        const records = await this.repository.findByMember(m.memberId, {
+          from: RECORDING_START_DATE,
+          until,
+        })
+        return achievementDaysOf(records, RECORDING_START_DATE, until)
+      }),
+    )
+    return specialMission(counts)
   }
 
   private async change(
