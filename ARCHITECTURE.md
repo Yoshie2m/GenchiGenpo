@@ -258,6 +258,21 @@ src/
 - ステップ1: 全5つの `domain/*Repository.ts`（`MemberRepository` / `CandidateListRepository` / `PersonalMissionRepository` / `DailyStepsRepository` / `TeamMissionRepository`）の `load()`/`save()` を `Promise` を返す形に変える。読み書きの単位（コンテキスト全件）は変えない。
 - ステップ2: コンテキストごとに、実際に必要な読み書きの単位（メンバー別・日付別など）を洗い直し、メソッドを置き換える（TASK.md「コンテキスト単位の『まとめて読み込み・まとめて保存』の設計を見直す」で対応）。
 
+**ステップ2の設計 【採用】（コンテキストごとの読み書きの単位）**
+
+「無料枠の見積り」で、実際にスケール（メンバー数×継続期間）に比例して肥大化すると指摘したのは `daily_steps` だけ（`team_mission_state` は正規化方針の決定で、既に1つの集約として JSONB＋版番号にする設計にしている）。`members`・`candidate_order` はメンバー数・候補数がそもそも小さく一定のため、全件読み書きのままで無料枠への影響はない。これを踏まえ、コンテキストごとに次のように見直す。
+
+| コンテキスト | 今 | 見直し後 | 理由 |
+|---|---|---|---|
+| `MemberRepository` | `load()`/`save(全員)` | `all(): Promise<Member[]>`（読み取りは変えず全件）／`add(member: Member): Promise<void>`（1件追加は1行INSERT） | 読み取りは番付・チーム振り分けで元々全員分が要る。書き込み（新規登録）だけ1行化すれば十分。`replaceAll()`（開発用画面のダミーデータ取り込み）は本番では使わないため、現状のまま残してよい |
+| `CandidateListRepository` | `load(master)`/`save(全件)` | 変更なし | 候補数（マスターデータ由来、現状9件）は固定で小さく、全件読み書きで無料枠に影響しない |
+| `PersonalMissionRepository` | `load()`/`save(全員)` | `findByMember(memberId: MemberId): Promise<PersonalMission \| null>`／`save(mission: PersonalMission): Promise<void>`（1件） | スキーマが元々 `member_id` 単位（`personal_missions`・`personal_mission_steps`・`personal_mission_arrivals`）。全員分読み込んで1人分を探す今の実装はスキーマと噛み合っていない |
+| `DailyStepsRepository` | `load()`/`save(全件)` | `findOne(memberId, date): Promise<DailySteps \| null>`／`save(record: DailySteps, guard: boolean): Promise<void>`（1件。`guard` は「`daily_steps` の日次上書きルール」の条件付きUPSERTを使うか）／`findByMember(memberId, range?: { from, until }): Promise<DailySteps[]>`／`findByDate(date): Promise<DailySteps[]>` | 記録・修正は1行の読み書きで十分。番付の「今日」はその日1日分だけで足りる（`findByDate`）。平均・総歩数（`recordsOf`/`averageOf`/`leaderboard`）は期間を絞ってメンバー単位で読む（`findByMember` に `range` を渡す）。SUMをSQL側（集計クエリ）に持たせる最適化は、無料枠見積りの結論どおり、本番稼働後に実際の帯域使用量を見てから検討する（先送り） |
+| `TeamMissionRepository` | `load()`/`save(状態全体)` | 変更なし | 既に1つの集約（JSONB＋版番号）として決定済み（データ永続化（DB）設計） |
+
+- `personalAverage()`（歩数ドメインの平均計算）はそのまま純粋なTypeScriptに残す。Repositoryは期間で絞った行を返すだけで、合計・割り算はドメイン層が行う（SQLにビジネスルールを持たせない、という既存の方針を保つ）。
+- `StepRecordService.leaderboard()` の「総歩数」「平均歩数」は、メンバーごとに `findByMember` を呼ぶ形になる（メンバー数回のクエリ）。1回あたりの転送量は該当メンバーの期間分だけに絞られるが、クエリ回数は増える。これも無料枠の実データを見てから、必要になれば集計クエリへの置き換えを検討する。
+
 ### データ永続化（DB）設計
 
 参考: README には Firestore 想定のイメージ（`users` / `teams` / `steps`、`steps` の ID は `ユーザーID_日付`）があるが、正式な設計として扱わない。
