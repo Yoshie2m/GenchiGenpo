@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createApp } from '../composition.ts'
 import { fixedClock } from '../shared/Clock.ts'
@@ -131,6 +131,18 @@ test('表示の設定（開発用画面の中）で昼・夜を切り替えら�
   await user.click(screen.getByLabelText('夜（藍染の夜）'))
   expect(document.documentElement.dataset.theme).toBe('night')
   await user.click(screen.getByLabelText('昼（和紙）'))
+  expect(document.documentElement.dataset.theme).toBe('light')
+})
+
+test('本番の認証フローでは、表示の設定の画面を出さず、保存された設定も使わず初期値（昼）にする', async () => {
+  const { app } = await setup()
+  const me = (await app.members.members())[0]
+  localStorage.setItem('genchigenpo:uiSettings', JSON.stringify({ theme: 'night' }))
+  cleanup()
+  render(<App app={app} auth={{ memberId: me.memberId, onSignOut: () => {} }} />)
+  await screen.findByRole('button', { name: '記録する' })
+  expect(screen.queryByText('表示の設定')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('夜（藍染の夜）')).not.toBeInTheDocument()
   expect(document.documentElement.dataset.theme).toBe('light')
 })
 
