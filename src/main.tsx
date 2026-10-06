@@ -4,7 +4,8 @@ import { createApp } from './composition.ts'
 import { createSupabaseClient } from './shared/supabaseClient.ts'
 import './ui/design-system/index.ts'
 import App from './ui/App.tsx'
-import { AuthGate } from './ui/AuthGate.tsx'
+import { createSampleApp } from './sampleApp.ts'
+import { EntryGate } from './ui/EntryGate.tsx'
 import './ui/App.css'
 
 const root = createRoot(document.getElementById('root')!)
@@ -16,7 +17,7 @@ if (import.meta.env.VITE_SUPABASE_URL) {
   const app = createApp({ supabase: client })
   root.render(
     <StrictMode>
-      <AuthGate client={client} app={app} />
+      <EntryGate client={client} app={app} createSample={createSampleApp} />
     </StrictMode>,
   )
 } else {

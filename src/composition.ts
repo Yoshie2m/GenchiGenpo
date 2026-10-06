@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { DEMO_MEMBERS, buildDemoData, demoStepsOf } from './dev/demoData.ts'
+import { buildSampleData } from './dev/sampleData.ts'
 import type { MemberRepository } from './member/domain/MemberRepository.ts'
 import { MemberService } from './member/application/MemberService.ts'
 import { LocalStorageMemberRepository } from './member/infrastructure/LocalStorageMemberRepository.ts'
@@ -129,17 +130,28 @@ export function createApp(options: AppOptions = {}) {
     return member
   }
 
+  /** メンバーと日ごとの歩数を入れ替えて入れる（ダミーデータ・サンプルの取り込み用）。 */
+  async function seed(data: ReturnType<typeof buildDemoData>) {
+    await members.replaceAll(data.members)
+    for (const m of data.members) await personal.ensureStarted(m.id, m.registeredDate)
+    for (const d of data.dailySteps) {
+      await steps.recordStepsAt(d.memberId, d.date, d.steps, d.source, d.reflectedAt)
+    }
+  }
+
   /** 開発用の操作（PoC の開発用画面から使う）。 */
   const dev = {
     /** メンバーが1人もいなければ、ダミーメンバー10人とその歩数を入れる。 */
     async seedDemoIfEmpty(): Promise<void> {
       if ((await members.members()).length > 0) return
-      const data = buildDemoData(clock.now())
-      await members.replaceAll(data.members)
-      for (const m of data.members) await personal.ensureStarted(m.id, m.registeredDate)
-      for (const d of data.dailySteps) {
-        await steps.recordStepsAt(d.memberId, d.date, d.steps, d.source, d.reflectedAt)
-      }
+      await seed(buildDemoData(clock.now()))
+    },
+    /**
+     * サンプルページ用: メンバー6人とその歩数を、乱数で作って入れる（既存のメンバーは入れ替える）。
+     * 保存先がメモリだけのアプリ（createSampleApp）でだけ使う。
+     */
+    async seedSample(random: () => number = Math.random): Promise<void> {
+      await seed(buildSampleData(clock.now(), random))
     },
     /**
      * 今日の分のダミーの歩数を、指定したメンバー以外のダミーメンバーに入れる。
