@@ -14,7 +14,8 @@ function provinceOf(province: string): string {
 /**
  * 道中: 個人ミッション（本社 → 新虎オフィス）を「道中試練」として出す。試練の説明、行程・総道のり・
  * 進捗・現在地の要約、今いる国の景色、街道の線（RouteLine）、通過記録（CheckpointLog）の順に並べる。
- * 通過点に着いても特別な表示は出さない（記録が残るだけ）。
+ * 通過点に着いても特別な表示は出さない（記録が残るだけ）。ゴールに着いた後だけ、
+ * 「踏破、次の試練は支度中」を出す（ゴール後は別のルートを用意する。DOMAINS.md「個人ミッション」）。
  */
 export function JourneyPage({ app, memberId, version }: PageProps) {
   const state = useAsyncData(() => app.personal.view(memberId), [app, memberId, version])
@@ -33,7 +34,7 @@ export function JourneyPage({ app, memberId, version }: PageProps) {
   )
 }
 
-function Journey({ view }: { view: JourneyView }) {
+export function Journey({ view }: { view: JourneyView }) {
   const scene = provinceSceneUrl(view.current.province)
   const passedCount = view.nearby.filter((n) => n.passed).length
   // 歩いた区間: 直前に着いた通過点まで（現在地は着いた通過点と次の通過点の間）
@@ -53,6 +54,15 @@ function Journey({ view }: { view: JourneyView }) {
           最初の試練は、各々の足跡を刻みつつ「江戸陣屋（新虎）」へ到達すること。
         </p>
       </div>
+
+      {view.completed && (
+        <div className="ho-tanzaku">
+          <span className="ho-tanzaku__title" aria-hidden="true">
+            踏破
+          </span>
+          <p className="fs-body">其の壱、踏破。次の試練は支度中です。</p>
+        </div>
+      )}
 
       <dl className="journey__summary">
         <div>

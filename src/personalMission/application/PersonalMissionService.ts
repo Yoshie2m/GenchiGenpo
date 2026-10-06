@@ -4,6 +4,7 @@ import type { LocalDate } from '../../shared/LocalDate.ts'
 import { stepsToRi } from '../domain/distance.ts'
 import { PersonalMission } from '../domain/PersonalMission.ts'
 import type { PersonalMissionRepository } from '../domain/PersonalMissionRepository.ts'
+import { progressPercentOf } from '../domain/progress.ts'
 import type { Checkpoint, Route } from '../domain/Route.ts'
 
 /** 「道中」の画面に出す内容。 */
@@ -22,7 +23,7 @@ export interface JourneyView {
   readonly completed: boolean
   /** 総道のり（里）。総歩数を歩幅72cmで距離に換算したもの。 */
   readonly totalDistanceRi: number
-  /** 現在の進捗（完遂率、%）。累計歩数 ÷ 総歩数。 */
+  /** 現在の進捗（完遂率、%）。累計歩数 ÷ 総歩数の切り捨てで、上限は100。 */
   readonly progressPercent: number
   /** 街道の線に載せる通過点（直前に着いた2つと、これからの3つ）。 */
   readonly nearby: readonly { readonly checkpoint: Checkpoint; readonly passed: boolean }[]
@@ -74,7 +75,7 @@ export class PersonalMissionService {
       stepsToNext: mission.stepsToNext,
       completed: mission.isCompleted,
       totalDistanceRi: stepsToRi(goalSteps),
-      progressPercent: Math.round((mission.cumulativeSteps / goalSteps) * 100),
+      progressPercent: progressPercentOf(mission.cumulativeSteps, goalSteps),
       nearby: cps
         .slice(from, to)
         .map((checkpoint, i) => ({ checkpoint, passed: from + i <= currentIndex })),
