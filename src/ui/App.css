@@ -158,6 +158,18 @@ body {
   grid-column: 1 / -1;
   margin-top: var(--ma-3);
 }
+/* 道中試練の要約（行程・総道のり・進捗・現在地）。項目名と値を1行ずつ並べる。 */
+.journey__summary {
+  display: grid;
+  gap: var(--ma-2);
+  margin: 0;
+}
+.journey__summary dt {
+  margin: 0;
+}
+.journey__summary dd {
+  margin: 0;
+}
 /* 国の景色は切り取らずに全体を見せる（左上の題簽の国名が欠けないように、縮小して収める）。 */
 .journey__scene {
   display: block;

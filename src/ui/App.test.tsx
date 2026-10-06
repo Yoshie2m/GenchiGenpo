@@ -50,7 +50,7 @@ test('下部の5タブで画面を切り替える', async () => {
   const { user } = await setup()
   for (const [name, heading] of [
     ['記録', '記録'],
-    ['道中', '道中'],
+    ['道中', '道中試練'],
     ['特命', '特命'],
     ['番付', '番付'],
     ['今日', '今日の歩み'],
@@ -63,16 +63,16 @@ test('下部の5タブで画面を切り替える', async () => {
   }
 })
 
-test('今日の歩数を記録すると、今日の画面と道中の累計歩数に反映される', async () => {
+test('今日の歩数を記録すると、今日の画面と道中試練の進捗に反映される', async () => {
   const { app, user } = await setup()
   const firstMember = (await app.members.members())[0].memberId
-  const before = (await app.personal.view(firstMember))!.cumulativeSteps
   await user.type(screen.getByLabelText('今日の歩数（その日の合計）'), '8432')
   await user.click(screen.getByRole('button', { name: '記録する' }))
   expect(await screen.findByRole('status')).toHaveTextContent('8,432歩で記録しました')
   expect(await screen.findByLabelText('今日の歩数 8432歩')).toBeInTheDocument()
   await user.click(tab('道中'))
-  expect(await screen.findByLabelText(`累計歩数 ${before + 8432}歩`)).toBeInTheDocument()
+  const after = (await app.personal.view(firstMember))!
+  expect(await screen.findByText(`${after.progressPercent}％達成`)).toBeInTheDocument()
 })
 
 test('30,000歩を超えて入れると、30,000歩で止めたことを知らせる', async () => {
@@ -101,10 +101,13 @@ test('記録の画面では、誤入力の修正に印を付けたときだけ�
   expect((await app.steps.recordsOf(me)).find((r) => r.date === latest.date)?.steps).toBe(1)
 })
 
-test('道中の画面に、次の通過点と一口メモが出る', async () => {
+test('道中試練の画面に、行程・総道のり・進捗・現在地と通過記録が出る', async () => {
   const { user } = await setup()
   await user.click(tab('道中'))
-  expect(await screen.findByText(/次の通過点/)).toBeInTheDocument()
+  expect(await screen.findByText('道中（行程）')).toBeInTheDocument()
+  expect(screen.getByText('総道のり（距離）')).toBeInTheDocument()
+  expect(screen.getByText('現在の進捗（完遂率）')).toBeInTheDocument()
+  expect(screen.getByText('現在地')).toBeInTheDocument()
   expect(screen.getByRole('list', { name: '通過記録' })).toBeInTheDocument()
 })
 
