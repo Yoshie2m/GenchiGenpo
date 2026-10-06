@@ -4,6 +4,7 @@ import type { App as AppServices } from '../composition.ts'
 import { memberId as toMemberId, type MemberId } from '../publishedLanguage/memberId.ts'
 import App from './App.tsx'
 import { errorMessage } from './pages/errorMessage.ts'
+import { SAMPLE_HASH } from './SamplePage.tsx'
 
 type MemberLookup = 'loading' | 'found' | 'notFound'
 
@@ -97,6 +98,11 @@ function SignInForm({ client }: { client: SupabaseClient }) {
       <button type="submit" className="ho-btn ho-btn--primary">
         ログイン用のリンクを送る
       </button>
+      <p className="fs-caption">
+        ログインできない方は、
+        <a href={SAMPLE_HASH}>まずはここから確認</a>
+        （サンプルを見られます）
+      </p>
     </form>
   )
 }
