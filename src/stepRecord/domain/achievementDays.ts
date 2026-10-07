@@ -37,8 +37,11 @@ export interface TierMember {
 
 /** 特命（DOMAINS.md）に出す内容。 */
 export interface SpecialMission {
-  /** 参加メンバー全員分の達成率（%、0〜100の整数。全員が対象期間すべてで達成すれば100）。 */
-  readonly overallRate: number
+  /**
+   * 全体成果（DOMAINS.md）: メンバー1人あたりの平均達成日数（日、小数第2位を四捨五入した小数第1位まで）。
+   * 1日ずつ「その日に達成した人数 ÷ 全員の人数」を足し合わせた値と同じ。全員が対象期間すべてで達成すれば対象日数と同じ。
+   */
+  readonly overallDays: number
   /** 達成日数の対象日数（全員共通の分母）。 */
   readonly totalDays: number
   /** 極上仕事人（ごくじょう）: 対象期間のすべての日で達成したメンバー（達成率100%）。 */
@@ -59,7 +62,8 @@ export function specialMission(
 ): SpecialMission | null {
   if (members.length === 0 || totalDays <= 0) return null
   const totalAchievementDays = members.reduce((sum, m) => sum + m.achievementDays, 0)
-  const overallRate = Math.round((totalAchievementDays / (members.length * totalDays)) * 100)
+  // 整数のまま10倍して四捨五入し、10で割る（小数のまま掛けて端数の誤差が出るのを避ける）
+  const overallDays = Math.round((totalAchievementDays * 10) / members.length) / 10
 
   const legendaryWorkers = members
     .filter((m) => m.achievementDays >= totalDays)
@@ -84,5 +88,5 @@ export function specialMission(
     (m) => m.rate >= ELITE_WORKER_THRESHOLD && m.rate < RIGHT_HAND_WORKER_THRESHOLD,
   )
 
-  return { overallRate, totalDays, legendaryWorkers, rightHandWorkers, eliteWorkers }
+  return { overallDays, totalDays, legendaryWorkers, rightHandWorkers, eliteWorkers }
 }

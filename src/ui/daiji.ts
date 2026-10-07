@@ -25,3 +25,12 @@ export function toDaiji(n: number): string {
   if (r > 0) out += DIGITS[r]
   return out
 }
+
+/**
+ * 小数第1位までの数を大字で表す（例: 3.4 → 「参・四」、0.5 → 「零・五」、10 → 「拾・零」）。
+ * 小数第2位以下は切り捨てる（呼び出し側で四捨五入してから渡す）。小数点は「・」。
+ */
+export function toDaijiDecimal(n: number): string {
+  const tenths = Math.floor(Math.round(n * 100) / 10) // 浮動小数の誤差（3.4 → 3.3999…）を避けて10倍の整数にする
+  return `${toDaiji(Math.floor(tenths / 10))}・${DIGITS[tenths % 10]}`
+}
