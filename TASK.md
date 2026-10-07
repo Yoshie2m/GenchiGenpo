@@ -106,6 +106,7 @@
 - [x] 「極上（パーフェクト）」を達成率に応じた3つの称号に分けた: **極上仕事人（ごくじょう、名札「極上」）**＝達成率100%・伝説の達人、**筆頭仕事人（ひっとう、名札「筆頭」）**＝90%以上100%未満・隊を引っ張る、頼れるナンバーツー、**精鋭仕事人（せいえい、名札「精鋭」）**＝80%以上90%未満・実力のある、現場の主戦力（80%未満はどの称号も持たない）。`achievementDays.ts` の `SpecialMission` を `perfectMembers` 1つから `legendaryWorkers`/`rightHandWorkers`/`eliteWorkers` の3つに変更し、`SpecialMissionPage.tsx` は `TIERS` 配列と `TierSection` で3つの称号を共通に描画する。DOMAINS.md「特命」の定義も更新した
 - [x] 特命画面に見出しを追加: 全員分の達成率の上に「**全体成果**」、称号ごとの一覧の上に「**凄腕仕事人一覧**」（`SpecialMissionPage.tsx` に `<section>`+`<h3 className="fs-h2">` を追加。各称号の見出しは `h3`→`h4` に下げて見出しの階層を保った）
 - [ ] 達成日数の対象期間は、ドメインエキスパートとの対話で確定していない仮の判断（DOMAINS.md「達成日数」参照）。認識を確認すること
+- [ ] 特命「全体成果」の表示を、％（達成率）から日数に変更する → 10月1日から1日ずつ、その日に8000歩を達成した人数 ÷ メンバー人数 を、表示の前日まで足し合わせた数字を、単位「日」で表示する。この合計は計算上、参加メンバー全員の達成日数の合計 ÷ メンバー人数（＝1人あたりの平均達成日数）と同じ値になる。`src/stepRecord/domain/achievementDays.ts` の `specialMission()` の `overallRate`（％、`Math.round(totalAchievementDays / (members.length * totalDays) * 100)`）を、日数の値（例: `Math.round(totalAchievementDays / members.length)`。小数点の扱いは未確認、四捨五入を仮とする）に置き換え、`SpecialMissionPage.tsx` の「全体成果」カード（`DaijiPercent`）の単位を「％」から「日」に直す。称号（極上仕事人・筆頭仕事人・精鋭仕事人、1人ごとの達成率％）は対象外・変更しない。DOMAINS.md「特命」の定義も更新すること
 
 ### 今後のアップデート
 - [ ] 個人ミッションの次のルート（東海道五十三次ルートのゴール後）を用意する
