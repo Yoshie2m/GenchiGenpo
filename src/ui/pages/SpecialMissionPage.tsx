@@ -1,7 +1,7 @@
 import type { TierMember } from '../../stepRecord/application/StepRecordService.ts'
 import { localDateOf } from '../../shared/LocalDate.ts'
 import { AsyncView } from '../AsyncView.tsx'
-import { toDaiji } from '../daiji.ts'
+import { toDaiji, toDaijiDecimal } from '../daiji.ts'
 import { useUi } from '../design-system/uiContext.ts'
 import { useAsyncData } from '../useAsyncData.ts'
 import type { PageProps } from './types.ts'
@@ -67,6 +67,28 @@ function DaijiPercent({ value, label }: { value: number; label: string }) {
   )
 }
 
+/** 漢数字の大きな日数表示（小数第1位まで。例: 「参・四」日）。Daiji コンポーネントと同じ見た目で、単位だけ「日」にしたもの。 */
+function DaijiDays({ value, label }: { value: number; label: string }) {
+  const { showArabic } = useUi()
+  return (
+    <div>
+      <div className="ho-daiji">
+        <span role="img" aria-label={`${label} ${value.toFixed(1)}日`}>
+          {toDaijiDecimal(value)}
+        </span>
+        <span className="ho-daiji__unit" aria-hidden="true">
+          日
+        </span>
+      </div>
+      {showArabic && (
+        <div className="ho-daiji__arabic" aria-hidden="true">
+          {value.toFixed(1)}日
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** 称号を持つメンバーの一覧（TIERS の1項目分）。 */
 function TierSection({
   tier,
@@ -106,7 +128,7 @@ function TierSection({
 
 /**
  * 特命: 隊（チームミッション）の代わりに出す画面（DOMAINS.md「特命」）。
- * 参加メンバー全員分の達成率（1日8000歩以上を記録した日数の割合、10月1日〜昨日）と、
+ * 全体成果（メンバー1人あたりの平均達成日数。1日8000歩以上を記録した日数、10月1日〜昨日）と、
  * 達成率に応じた3つの称号（極上仕事人・筆頭仕事人・精鋭仕事人）の一覧を、漢数字で大きく出す。
  */
 export function SpecialMissionPage({ app, version }: PageProps) {
@@ -132,17 +154,17 @@ export function SpecialMissionPage({ app, version }: PageProps) {
                   全体成果
                 </h3>
                 <p className="fs-caption">
-                  1日8000歩を達成した日数の割合（10月1日〜昨日、{result.totalDays}日間）
+                  1人あたりの平均達成日数（1日8000歩以上、10月1日〜昨日の{result.totalDays}日間）
                 </p>
 
                 <article
                   className="ho-tanzaku special-mission__overall"
-                  aria-label="参加メンバー全員分の達成率"
+                  aria-label="参加メンバー全員分の全体成果"
                 >
                   <span className="ho-tanzaku__title" aria-hidden="true">
                     全員
                   </span>
-                  <DaijiPercent value={result.overallRate} label="参加メンバー全員分の達成率" />
+                  <DaijiDays value={result.overallDays} label="全体成果" />
                 </article>
               </section>
 

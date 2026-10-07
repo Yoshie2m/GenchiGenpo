@@ -32,24 +32,47 @@ describe('specialMission（特命）', () => {
     achievementDays: days,
   })
 
-  test('全員分の達成率（%）を出す。全員が全日数で達成すれば100', () => {
+  test('全体成果（日）を出す。全員が全日数で達成すれば対象日数と同じ', () => {
     const result = specialMission([member('a', 'A', 5), member('b', 'B', 5)], 5)
-    expect(result!.overallRate).toBe(100)
+    expect(result!.overallDays).toBe(5)
   })
 
-  test('達成率は全員分の達成日数の合計 ÷（人数×対象日数）', () => {
-    // 2人、対象10日: Aは10日中8日、Bは10日中2日 → 合計10日 ÷ 20日 = 50%
+  test('全体成果は、全員の達成日数の合計 ÷ 人数（1人あたりの平均達成日数）', () => {
+    // 2人、対象10日: Aは8日、Bは2日 → 合計10日 ÷ 2人 = 5日
     const result = specialMission([member('a', 'A', 8), member('b', 'B', 2)], 10)
-    expect(result!.overallRate).toBe(50)
+    expect(result!.overallDays).toBe(5)
   })
 
-  test('四捨五入する', () => {
-    // 3人、対象10日、合計16日 → 16/30 = 53.33...% → 53%
+  test('1日ずつ「その日に達成した人数 ÷ 全員の人数」を足した値と同じになる', () => {
+    // 4人、対象3日。1日目は4人中3人、2日目は2人、3日目は1人が達成 → 3/4 + 2/4 + 1/4 = 1.5日
+    // （各人の達成日数は 2・2・1・1 日で、合計6日 ÷ 4人 = 1.5日）
     const result = specialMission(
-      [member('a', 'A', 6), member('b', 'B', 5), member('c', 'C', 5)],
-      10,
+      [member('a', 'A', 2), member('b', 'B', 2), member('c', 'C', 1), member('d', 'D', 1)],
+      3,
     )
-    expect(result!.overallRate).toBe(53)
+    expect(result!.overallDays).toBe(1.5)
+  })
+
+  test('小数第2位を四捨五入して、小数第1位まで出す', () => {
+    // 3人、合計16日 → 16/3 = 5.333… → 5.3
+    const three = [member('a', 'A', 6), member('b', 'B', 5), member('c', 'C', 5)]
+    expect(specialMission(three, 10)!.overallDays).toBe(5.3)
+    // 3人、合計17日 → 5.666… → 5.7
+    const up = [member('a', 'A', 6), member('b', 'B', 6), member('c', 'C', 5)]
+    expect(specialMission(up, 10)!.overallDays).toBe(5.7)
+    // 8人、合計1日 → 0.125 → 0.1、合計3日 → 0.375 → 0.4（ちょうど半分は切り上げ: 0.05 の位が5）
+    const eight = (total: number) =>
+      Array.from({ length: 8 }, (_, i) => member(`m${i}`, `M${i}`, i === 0 ? total : 0))
+    expect(specialMission(eight(1), 10)!.overallDays).toBe(0.1)
+    expect(specialMission(eight(3), 10)!.overallDays).toBe(0.4)
+    // 4人、合計1日 → 0.25 → 0.3（ちょうど半分は切り上げ）
+    const four = [
+      member('a', 'A', 1),
+      member('b', 'B', 0),
+      member('c', 'C', 0),
+      member('d', 'D', 0),
+    ]
+    expect(specialMission(four, 10)!.overallDays).toBe(0.3)
   })
 
   test('全日数で達成した人だけを極上仕事人に含める', () => {

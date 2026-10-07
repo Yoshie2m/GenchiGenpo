@@ -162,6 +162,20 @@ test('初めて開いたときは、大字の下に算用数字を併記する',
   expect(await screen.findByText('8,432 歩')).toBeInTheDocument()
 })
 
+test('特命: 全体成果を、小数第1位までの日数（漢数字＋「日」）で出す', async () => {
+  const { app, user } = await setup()
+  await user.click(tab('特命'))
+  const overall = await screen.findByRole('img', { name: /^全体成果 \d+\.\d日$/ })
+  expect(overall).toBeInTheDocument()
+  // 画面の値は、サービスの計算（10月1日〜昨日の1人あたりの平均達成日数）と同じ
+  const members = await app.members.members()
+  const result = await app.steps.specialMission(members, parseLocalDate('2026-10-04'))
+  expect(overall).toHaveAttribute('aria-label', `全体成果 ${result!.overallDays.toFixed(1)}日`)
+  expect(screen.getByText('日')).toBeInTheDocument()
+  // 全員分の達成率（％）の大きな表示はもう出ない（称号の一覧の達成率は残る）
+  expect(screen.queryByRole('img', { name: /^参加メンバー全員分の達成率/ })).not.toBeInTheDocument()
+})
+
 test('番付: 今日の歩数 → 全日数の総歩数 → 平均歩数 の順に、上位5名を棒グラフで比べる', async () => {
   const { app, user } = await setup()
   const me = (await app.members.members())[0]
